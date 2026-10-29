@@ -1,19 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import {
-  DoorOpen,
-  Users,
-  CreditCard,
-  ShieldAlert,
-  Clock,
-  MapPin,
-  Inbox,
-} from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { EventFeed } from "@/components/teckey/EventFeed";
-import { LectorEnVivo } from "@/components/teckey/LectorEnVivo";
-import { useMinutes } from "@/lib/use-minutes";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,7 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EventFeed } from "@/components/teckey/EventFeed";
+import { FloorPlan, type RoomView } from "@/components/teckey/FloorPlan";
+import { LectorEnVivo } from "@/components/teckey/LectorEnVivo";
 import { StatusPill } from "@/components/teckey/StatusBadge";
+import { useMinutes } from "@/lib/use-minutes";
 import {
   actions,
   liveStatus,
@@ -36,71 +28,88 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — TECKEY System" },
+      { title: "Resumen del día — TECKEY" },
       {
         name: "description",
-        content: "Panel general de aulas ocupadas, profesores activos, tarjetas RFID y alertas de acceso.",
+        content: "Plano en vivo de los pabellones, lecturas RFID y solicitudes pendientes.",
       },
-      { property: "og:title", content: "Dashboard — TECKEY System" },
+      { property: "og:title", content: "Resumen del día — TECKEY" },
       {
         property: "og:description",
-        content: "Panel general de aulas ocupadas, profesores activos, tarjetas RFID y alertas de acceso.",
+        content: "Plano en vivo de los pabellones, lecturas RFID y solicitudes pendientes.",
       },
     ],
   }),
   component: Dashboard,
 });
 
-function MetricCard({
+function Stat({
   label,
   value,
   hint,
-  icon: Icon,
-  tone,
+  children,
 }: {
   label: string;
   value: string;
   hint: string;
-  icon: typeof Users;
-  tone: string;
+  children?: React.ReactNode;
 }) {
   return (
-    <div className="surface-card p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-        </div>
-        <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${tone}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
+    <div className="bg-card px-5 py-4">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 font-display text-4xl font-semibold leading-none tabular-nums">{value}</p>
+      {children}
+      <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
     </div>
   );
 }
 
 function Dashboard() {
-  const { classrooms, professors, cards, requests, emergencies, logs, week } = useTeckey();
+  const { classrooms, professors, cards, requests, emergencies, logs, week, locks } = useTeckey();
   const [selected, setSelected] = useState<RequestItem | null>(null);
+  const navigate = useNavigate();
   const mins = useMinutes();
   const day = todayIndex();
 
   const live = useMemo(
-    () =>
-      classrooms.map((c) => ({ room: c, ...liveStatus(emergencies, c.id, week, day, mins) })),
+    () => classrooms.map((c) => ({ room: c, ...liveStatus(emergencies, c.id, week, day, mins) })),
     [classrooms, emergencies, week, day, mins],
   );
-  const occupied = live.filter((l) => l.status === "ocupado");
-  const later = live.filter((l) => l.status === "programado");
-  // Primero las clases en curso, luego las próximas por hora de inicio
-  const active = [...occupied, ...later.sort((a, b) => (a.block?.start ?? 0) - (b.block?.start ?? 0))];
+  const count = (s: string, pav?: string) =>
+    live.filter((l) => l.status === s && (!pav || l.room.pavilion === pav)).length;
+  const occupied = count("ocupado");
+  const later = count("programado");
+  const free = count("disponible");
 
   const assigned = cards.filter((c) => c.professorId).length;
-  const withAccess = professors.filter((p) => cards.some((c) => c.id === p.cardId && c.status === "Activa")).length;
+  const withAccess = professors.filter((p) =>
+    cards.some((c) => c.id === p.cardId && c.status === "Activa"),
+  ).length;
   const denied = logs.filter((l) => l.result === "DENEGADO").length;
   const offHours = logs.filter((l) => l.result === "FUERA DE HORARIO").length;
   const pending = requests.filter((r) => r.status === "pendiente");
+
+  const views = (pav: "F" | "B"): RoomView[] =>
+    live
+      .filter((l) => l.room.pavilion === pav)
+      .map(({ room, status, entry, block }) => {
+        const prof = professors.find((p) => p.id === entry?.professorId);
+        const lock = locks[room.id];
+        return {
+          room,
+          status,
+          caption:
+            status === "ocupado"
+              ? entry?.course
+              : status === "programado"
+                ? `Desde ${block?.label.slice(0, 5)}`
+                : "Libre",
+          tag: lock ? (lock.state === "abierto" ? "Abierta" : "10 min") : undefined,
+          title: entry
+            ? `${room.id}: ${entry.course}\n${prof ? professorName(prof) : ""}\n${block?.label ?? ""}`
+            : `${room.id}: libre el resto del día`,
+        };
+      });
 
   const resolve = (status: "aprobada" | "rechazada") => {
     if (!selected) return;
@@ -113,129 +122,128 @@ function Dashboard() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
-        <p className="text-sm text-muted-foreground">Estado general del sistema en tiempo real.</p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Resumen del día</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Estado de los pabellones F y B en la semana {week}, calculado con el horario del ciclo.
+          </p>
+        </div>
+      </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
+      <section
+        aria-label="Indicadores"
+        className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <Stat
           label="Aulas ocupadas ahora"
-          value={`${occupied.length}/${classrooms.length}`}
-          hint={`${later.length} con clase más tarde · semana ${week}`}
-          icon={DoorOpen}
-          tone="bg-occupied/12 text-occupied"
-        />
-        <MetricCard
+          value={`${occupied}/${classrooms.length}`}
+          hint={`${later} con clase más tarde, ${free} libres`}
+        >
+          <div className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-muted">
+            <span
+              className="bg-occupied"
+              style={{ width: `${(occupied / classrooms.length) * 100}%` }}
+            />
+            <span
+              className="bg-scheduled"
+              style={{ width: `${(later / classrooms.length) * 100}%` }}
+            />
+          </div>
+        </Stat>
+        <Stat
           label="Profesores con acceso"
           value={String(withAccess)}
-          hint={`de ${professors.length} registrados (tarjeta activa)`}
-          icon={Users}
-          tone="bg-primary/12 text-primary"
+          hint={`De ${professors.length} registrados, con tarjeta activa`}
         />
-        <MetricCard
-          label="Tarjetas RFID asignadas"
+        <Stat
+          label="Tarjetas asignadas"
           value={`${assigned}/${cards.length}`}
           hint={`${cards.length - assigned} en stock sin asignar`}
-          icon={CreditCard}
-          tone="bg-scheduled/15 text-scheduled"
         />
-        <MetricCard
+        <Stat
           label="Intentos rechazados"
           value={String(denied + offHours)}
-          hint={`${denied} denegados · ${offHours} fuera de horario`}
-          icon={ShieldAlert}
-          tone="bg-available/25 text-available-foreground dark:text-available"
+          hint={`${denied} denegados y ${offHours} fuera de horario`}
         />
-      </div>
+      </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <EventFeed />
-        <LectorEnVivo />
-      </div>
-
-      <section className="surface-card p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold tracking-tight">Estado en vivo por pabellón</h3>
-            <p className="text-sm text-muted-foreground">Clases en curso y las siguientes de hoy.</p>
+            <h2 className="text-lg font-semibold">Plano en vivo</h2>
+            <p className="text-sm text-muted-foreground">
+              Selecciona un aula para abrirla o ver su detalle.
+            </p>
           </div>
-          <div className="flex gap-3 text-xs">
+          <div className="flex gap-4">
             <StatusPill status="ocupado" />
             <StatusPill status="programado" />
             <StatusPill status="disponible" />
           </div>
         </div>
-
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {active.length === 0 && (
-            <p className="text-sm text-muted-foreground md:col-span-2">
-              No quedan clases hoy en los pabellones F y B.
-            </p>
-          )}
-          {active.slice(0, 8).map(({ room, status, entry, block }) => {
-            const prof = professors.find((p) => p.id === entry?.professorId);
-            return (
-              <div
-                key={room.id}
-                className="flex items-center gap-4 rounded-xl border border-border bg-secondary/50 p-4"
-              >
-                <div
-                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-semibold ${
-                    status === "ocupado"
-                      ? "bg-occupied text-occupied-foreground"
-                      : "bg-scheduled text-scheduled-foreground"
-                  }`}
-                >
-                  {room.id}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{entry?.course}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {prof ? professorName(prof) : "—"} · {entry?.career}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {(["F", "B"] as const).map((pav) => (
+            <FloorPlan
+              key={pav}
+              pavilion={pav}
+              rooms={views(pav)}
+              onSelect={() => navigate({ to: "/aulas" })}
+              header={
+                <div className="mb-2 flex items-baseline justify-between">
+                  <h3 className="font-display text-xl font-semibold">Pabellón {pav}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {count("ocupado", pav)} ocupadas, {count("programado", pav)} programadas
                   </p>
                 </div>
-                <div className="hidden shrink-0 items-center gap-1.5 text-xs text-muted-foreground sm:flex">
-                  <Clock className="h-3.5 w-3.5" />
-                  {block?.label}
-                </div>
-              </div>
-            );
-          })}
+              }
+            />
+          ))}
         </div>
       </section>
 
-      <section className="surface-card p-5">
-        <div className="flex items-center gap-2">
-          <Inbox className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold tracking-tight">Solicitudes de acceso especial</h3>
-          <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">
-            {pending.length} pendientes
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <EventFeed />
+        <LectorEnVivo />
+      </div>
+
+      <section className="surface-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="text-lg font-semibold">Solicitudes de acceso especial</h2>
+          <span className="text-sm text-muted-foreground">
+            <span className="font-display text-lg font-semibold text-foreground">
+              {pending.length}
+            </span>{" "}
+            pendientes
           </span>
         </div>
-
-        <ul className="mt-4 divide-y divide-border">
+        <ul className="divide-y divide-border">
           {pending.length === 0 && (
-            <li className="py-6 text-sm text-muted-foreground">No hay solicitudes pendientes.</li>
+            <li className="px-5 py-6 text-sm text-muted-foreground">
+              No hay solicitudes por revisar.
+            </li>
           )}
           {pending.map((r) => {
             const prof = professors.find((p) => p.id === r.professorId);
             return (
-              <li key={r.id} className="flex flex-wrap items-center gap-4 py-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">{prof ? professorName(prof) : "—"}</p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" /> Aula {r.classroom}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" /> {r.duration} · {r.requestedAt}
-                    </span>
+              <li
+                key={r.id}
+                className="grid gap-3 px-5 py-4 sm:grid-cols-[5rem_minmax(0,1fr)_auto] sm:items-center"
+              >
+                <span className="font-display text-2xl font-semibold leading-none">
+                  {r.classroom}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{prof ? professorName(prof) : "—"}</p>
+                  <p className="mt-0.5 truncate text-sm text-muted-foreground">{r.reason}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {r.duration}, recibida {r.requestedAt.toLowerCase()}
                   </p>
-                  <p className="mt-1 text-sm text-foreground/80">{r.reason}</p>
                 </div>
-                <Button onClick={() => setSelected(r)}>Ver y Responder</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelected(r)}>
+                  Revisar
+                </Button>
               </li>
             );
           })}
@@ -245,28 +253,25 @@ function Dashboard() {
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Solicitud de acceso especial</DialogTitle>
-            <DialogDescription>Revise el detalle antes de otorgar el permiso.</DialogDescription>
+            <DialogTitle>Solicitud para el aula {selected?.classroom}</DialogTitle>
+            <DialogDescription>Revisa el detalle antes de otorgar el permiso.</DialogDescription>
           </DialogHeader>
           {selected && (
-            <div className="space-y-3 text-sm">
+            <dl className="space-y-3 text-sm">
               <Row
                 k="Profesor"
                 v={professorName(professors.find((p) => p.id === selected.professorId)!)}
               />
-              <Row k="Aula solicitada" v={selected.classroom} />
               <Row k="Duración" v={selected.duration} />
               <Row k="Recibida" v={selected.requestedAt} />
-              <div className="rounded-lg border border-border bg-secondary/60 p-3 text-sm">
-                {selected.reason}
-              </div>
-            </div>
+              <div className="rounded-md bg-secondary p-3">{selected.reason}</div>
+            </dl>
           )}
           <DialogFooter>
-            <Button variant="destructive" onClick={() => resolve("rechazada")}>
+            <Button variant="outline" onClick={() => resolve("rechazada")}>
               Rechazar
             </Button>
-            <Button onClick={() => resolve("aprobada")}>Aprobar</Button>
+            <Button onClick={() => resolve("aprobada")}>Aprobar acceso</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -277,8 +282,8 @@ function Dashboard() {
 function Row({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border pb-2">
-      <span className="text-muted-foreground">{k}</span>
-      <span className="font-medium">{v}</span>
+      <dt className="text-muted-foreground">{k}</dt>
+      <dd className="font-medium">{v}</dd>
     </div>
   );
 }

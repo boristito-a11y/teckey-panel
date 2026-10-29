@@ -19,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FloorPlan } from "@/components/teckey/FloorPlan";
+import { PageHeader } from "@/components/teckey/Page";
 import { StatusPill, statusCircle } from "@/components/teckey/StatusBadge";
 import {
   BLOCKS,
@@ -38,13 +40,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/aulas")({
   head: () => ({
     meta: [
-      { title: "Aulas y Pabellones — TECKEY System" },
+      { title: "Aulas y pabellones — TECKEY" },
       {
         name: "description",
         content:
           "Matriz en tiempo real y cronograma semanal de los pabellones F y B con control de apertura RFID.",
       },
-      { property: "og:title", content: "Aulas y Pabellones — TECKEY System" },
+      { property: "og:title", content: "Aulas y pabellones — TECKEY" },
       {
         property: "og:description",
         content:
@@ -74,26 +76,24 @@ function AulasPage() {
 
   return (
     <div className="mx-auto max-w-[95rem] space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Aulas y Pabellones</h2>
-          <p className="text-sm text-muted-foreground">
-            Gestión global de espacios: estado en vivo y cronograma del ciclo (Semanas 1 a 16).
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <StatusPill status="ocupado" />
-          <StatusPill status="programado" />
-          <StatusPill status="disponible" />
-        </div>
-      </div>
+      <PageHeader
+        title="Aulas y pabellones"
+        description="Estado en vivo de cada aula y cronograma de las 16 semanas del ciclo."
+        actions={
+          <div className="flex gap-4">
+            <StatusPill status="ocupado" />
+            <StatusPill status="programado" />
+            <StatusPill status="disponible" />
+          </div>
+        }
+      />
 
-      <div className="inline-flex rounded-xl border border-border bg-card p-1">
+      <div className="inline-flex rounded-md border border-border bg-card p-1">
         <TabBtn active={tab === "matriz"} onClick={() => setTab("matriz")}>
-          Matriz en Tiempo Real
+          En vivo
         </TabBtn>
         <TabBtn active={tab === "cronograma"} onClick={() => setTab("cronograma")}>
-          Cronograma y Disponibilidad
+          Cronograma
         </TabBtn>
       </div>
 
@@ -119,7 +119,7 @@ function TabBtn({
     <button
       onClick={onClick}
       className={cn(
-        "rounded-lg px-5 py-2 text-sm font-medium transition-colors",
+        "rounded px-4 py-1.5 text-sm font-medium transition-colors",
         active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
       )}
     >
@@ -188,54 +188,43 @@ function MatrizView({ week }: { week: number }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-xl border border-border bg-card p-1">
+        <div className="inline-flex rounded-md border border-border bg-card p-1">
           {(["F", "B"] as const).map((p) => (
             <TabBtn key={p} active={pav === p} onClick={() => setPav(p)}>
               Pabellón {p}
             </TabBtn>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {DAYS[day]} · {String(Math.floor(mins / 60)).padStart(2, "0")}:
-          {String(mins % 60).padStart(2, "0")} · Semana {week}
+        <p className="text-sm text-muted-foreground">
+          {DAYS[day]}, <span className="font-display text-base font-semibold text-foreground">
+            {String(Math.floor(mins / 60)).padStart(2, "0")}:{String(mins % 60).padStart(2, "0")}
+          </span>, semana {week}
         </p>
       </div>
 
-      {floors
-        .slice()
-        .reverse()
-        .map(({ floor, rooms }) => (
-          <div key={floor} className="surface-card overflow-hidden">
-            <div className="flex items-center justify-between border-b border-border bg-secondary/60 px-5 py-3">
-              <p className="text-sm font-semibold">Piso {floor}</p>
-              <p className="text-xs text-muted-foreground">{rooms.length} aulas</p>
-            </div>
-            <div className="flex flex-wrap gap-4 p-6">
-              {rooms.map((room) => {
-                const st = liveStatus(emergencies, room.id, week, day, mins).status;
-                const open = locks[room.id];
-                return (
-                  <button
-                    key={room.id}
-                    onClick={() => setSelectedId(room.id)}
-                    className={cn(
-                      "relative grid h-20 w-20 place-items-center rounded-full text-sm font-semibold ring-8 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring",
-                      statusCircle[st],
-                    )}
-                    title={`${room.id} — ${st}`}
-                  >
-                    {room.number}
-                    {open && (
-                      <span className="absolute -bottom-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
-                        {open.state === "abierto" ? "ABIERTO" : "10 min"}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <FloorPlan
+        pavilion={pav}
+        onSelect={(room) => setSelectedId(room.id)}
+        rooms={floors.flatMap(({ rooms }) =>
+          rooms.map((room) => {
+            const l = liveStatus(emergencies, room.id, week, day, mins);
+            const lock = locks[room.id];
+            const prof = professors.find((p) => p.id === l.entry?.professorId);
+            return {
+              room,
+              status: l.status,
+              caption:
+                l.status === "disponible"
+                  ? "Libre"
+                  : l.status === "programado"
+                    ? `${l.entry?.course}, desde ${l.block?.label.slice(0, 5)}`
+                    : `${l.entry?.course}${prof ? `, ${prof.apellidos.split(" ")[0]}` : ""}`,
+              tag: lock ? (lock.state === "abierto" ? "Abierta" : "10 min") : undefined,
+              title: `${room.id}: ${l.entry?.course ?? "libre"}`,
+            };
+          }),
+        )}
+      />
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelectedId(null)}>
         <DialogContent>
@@ -415,7 +404,7 @@ function CronogramaView({ week, setWeek }: { week: number; setWeek: (w: number) 
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Pabellón</Label>
-          <div className="inline-flex rounded-xl border border-border bg-card p-1">
+          <div className="inline-flex rounded-md border border-border bg-card p-1">
             {(["F", "B"] as const).map((p) => (
               <TabBtn key={p} active={pav === p} onClick={() => setPav(p)}>
                 {p}

@@ -1,7 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { GraduationCap, LogIn, ShieldCheck, UserCog } from "lucide-react";
+import { GraduationCap, LogIn, UserCog } from "lucide-react";
+
+import { FloorPlan, type RoomView } from "@/components/teckey/FloorPlan";
+import type { SlotStatus } from "@/lib/teckey-store";
+
+// Plano decorativo con estados fijos (no muestra datos reales antes de iniciar sesión)
+const DEMO_STATES: SlotStatus[] = [
+  "ocupado", "programado", "disponible", "ocupado", "programado",
+  "programado", "ocupado", "ocupado", "disponible", "programado",
+  "disponible", "ocupado", "programado", "ocupado", "ocupado",
+];
+const DEMO_PLAN: RoomView[] = DEMO_STATES.map((status, i) => {
+  const floor = 3 - Math.floor(i / 5);
+  const number = `${floor}0${(i % 5) + 1}`;
+  return { status, room: { id: `F${number}`, pavilion: "F", floor, number, status } };
+});
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,34 +65,37 @@ function LoginPage() {
   const demoProf = professors[2] ?? professors[0];
 
   return (
-    <div className="grid min-h-screen bg-background lg:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground lg:flex">
-        <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <p className="text-lg font-semibold tracking-wide text-sidebar-accent-foreground">TECKEY</p>
-        </div>
-        <div>
-          <h1 className="text-4xl font-semibold leading-tight text-sidebar-accent-foreground">
-            Control de acceso RFID para aulas universitarias
+    <div className="grid min-h-screen bg-background lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <div className="hidden flex-col justify-between border-r border-border bg-secondary/60 p-12 lg:flex">
+        <p className="font-display text-3xl font-semibold leading-none">TecKey</p>
+
+        <div className="max-w-lg">
+          <h1 className="text-4xl font-semibold leading-tight">
+            Cada aula de los pabellones F y B, abierta solo para quien tiene clase.
           </h1>
-          <p className="mt-4 max-w-md text-sidebar-foreground/75">
-            Pabellones F y B, horarios del ciclo 2026-II, tarjetas y solicitudes en un solo lugar.
+          <p className="mt-4 text-muted-foreground">
+            Las tarjetas RFID de los docentes abren la puerta en su bloque horario. La Oficina de Servicios ve
+            en vivo qué aulas están ocupadas y atiende las solicitudes especiales.
           </p>
+          <div className="mt-10" aria-hidden="true">
+            <FloorPlan pavilion="F" size="sm" rooms={DEMO_PLAN} />
+            <p className="mt-2 text-xs text-muted-foreground">Pabellón F, vista de ejemplo</p>
+          </div>
         </div>
-        <p className="text-xs text-sidebar-foreground/60">Oficina de Servicios · Semestre 2026-II</p>
+
+        <p className="text-xs text-muted-foreground">Oficina de Servicios, semestre 2026-II</p>
       </div>
 
       <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-sm space-y-8">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Iniciar Sesión</h2>
-            <p className="text-sm text-muted-foreground">Ingrese con su cuenta institucional.</p>
+            <p className="font-display text-3xl font-semibold leading-none lg:hidden">TecKey</p>
+            <h2 className="mt-6 text-2xl font-semibold lg:mt-0">Iniciar sesión</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Usa tu cuenta institucional.</p>
           </div>
-          <form onSubmit={submit} className="surface-card space-y-4 p-6">
+          <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="user">Usuario / Correo Institucional</Label>
+              <Label htmlFor="user">Correo institucional o DNI</Label>
               <Input id="user" value={user} onChange={(e) => setUser(e.target.value)} placeholder="nombre@universidad.edu.pe" autoComplete="username" />
             </div>
             <div className="space-y-2">
@@ -85,21 +103,21 @@ function LoginPage() {
               <Input id="pass" type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="current-password" />
             </div>
             <Button type="submit" className="w-full">
-              <LogIn className="mr-2 h-4 w-4" /> Iniciar Sesión
+              <LogIn className="mr-2 h-4 w-4" /> Iniciar sesión
             </Button>
             <p className="text-xs text-muted-foreground">
-              Docentes: correo institucional o DNI, y su DNI como contraseña.
+              Los docentes usan su DNI como contraseña.
             </p>
           </form>
 
-          <div className="surface-card space-y-3 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Acceso rápido (Demo)</p>
-            <div className="grid gap-2 sm:grid-cols-2">
+          <div className="border-t border-border pt-6">
+            <p className="text-sm font-medium">Entrar a la demostración</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <Button variant="outline" onClick={enterAdmin}>
-                <UserCog className="mr-2 h-4 w-4" /> Entrar como Administrador
+                <UserCog className="mr-2 h-4 w-4" /> Administrador
               </Button>
               <Button variant="outline" onClick={() => demoProf && enterProf(demoProf.id)}>
-                <GraduationCap className="mr-2 h-4 w-4" /> Entrar como Profesor
+                <GraduationCap className="mr-2 h-4 w-4" /> Profesor
               </Button>
             </div>
           </div>

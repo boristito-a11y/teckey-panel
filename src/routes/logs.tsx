@@ -6,13 +6,6 @@ import { Download, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -21,18 +14,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AccessBadge } from "@/components/teckey/AccessBadge";
+import { PageHeader, TablePanel, Tabs } from "@/components/teckey/Page";
 import { downloadCsv } from "@/lib/csv";
 import { useTeckey } from "@/lib/teckey-store";
 
 export const Route = createFileRoute("/logs")({
   head: () => ({
     meta: [
-      { title: "Registro de Accesos — TECKEY System" },
+      { title: "Registro de accesos — TECKEY" },
       {
         name: "description",
         content: "Auditoría de accesos RFID con fecha, aula, docente, tag y resultado del intento.",
       },
-      { property: "og:title", content: "Registro de Accesos — TECKEY System" },
+      { property: "og:title", content: "Registro de accesos — TECKEY" },
       {
         property: "og:description",
         content: "Auditoría de accesos RFID con fecha, aula, docente, tag y resultado del intento.",
@@ -68,77 +62,78 @@ function LogsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Registro de Accesos</h2>
-          <p className="text-sm text-muted-foreground">
-            Auditoría completa de lecturas RFID en los pabellones.
-          </p>
-        </div>
-        <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
-          <Download className="mr-2 h-4 w-4" /> Exportar Reporte
-        </Button>
-      </div>
+      <PageHeader
+        title="Registro de accesos"
+        description="Cada lectura de tarjeta en los lectores de aula, de la más reciente a la más antigua."
+        actions={
+          <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
+            <Download className="mr-2 h-4 w-4" /> Exportar CSV
+          </Button>
+        }
+      />
 
-      <div className="surface-card p-5">
-        <div className="flex flex-wrap items-center gap-3">
-          <Select value={result} onValueChange={setResult}>
-            <SelectTrigger className="w-[190px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos los resultados</SelectItem>
-              <SelectItem value="CONCEDIDO">Concedido</SelectItem>
-              <SelectItem value="FUERA DE HORARIO">Fuera de horario</SelectItem>
-              <SelectItem value="DENEGADO">Denegado</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="relative w-full max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar aula, docente o tag"
-              className="pl-9"
-            />
-          </div>
-          <p className="ml-auto text-xs text-muted-foreground">{rows.length} registros</p>
-        </div>
+      <Tabs
+        value={result}
+        onChange={setResult}
+        options={[
+          { key: "todos", label: "Todos", count: logs.length },
+          { key: "CONCEDIDO", label: "Concedidos", count: logs.filter((l) => l.result === "CONCEDIDO").length },
+          { key: "FUERA DE HORARIO", label: "Fuera de horario", count: logs.filter((l) => l.result === "FUERA DE HORARIO").length },
+          { key: "DENEGADO", label: "Denegados", count: logs.filter((l) => l.result === "DENEGADO").length },
+        ]}
+      />
 
-        <div className="mt-4 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha / Hora</TableHead>
-                <TableHead>Aula</TableHead>
-                <TableHead>Profesor</TableHead>
-                <TableHead>RFID Tag ID</TableHead>
-                <TableHead className="text-right">Resultado</TableHead>
+      <TablePanel
+        toolbar={
+          <>
+            <div className="relative w-full max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar aula, profesor o tarjeta"
+                aria-label="Buscar en el registro"
+                className="pl-9"
+              />
+            </div>
+            <p className="ml-auto text-sm text-muted-foreground">
+              <span className="font-display text-base font-semibold text-foreground">{rows.length}</span> lecturas
+            </p>
+          </>
+        }
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha y hora</TableHead>
+              <TableHead>Aula</TableHead>
+              <TableHead>Profesor</TableHead>
+              <TableHead>Tarjeta</TableHead>
+              <TableHead className="text-right">Resultado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((l) => (
+              <TableRow key={l.id}>
+                <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">{l.datetime}</TableCell>
+                <TableCell className="font-display text-base font-semibold">{l.classroom}</TableCell>
+                <TableCell>{l.professorName}</TableCell>
+                <TableCell className="font-mono text-xs">{l.tag}</TableCell>
+                <TableCell className="text-right">
+                  <AccessBadge result={l.result} />
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((l) => (
-                <TableRow key={l.id}>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">{l.datetime}</TableCell>
-                  <TableCell className="font-medium">{l.classroom}</TableCell>
-                  <TableCell>{l.professorName}</TableCell>
-                  <TableCell className="font-mono text-xs">{l.tag}</TableCell>
-                  <TableCell className="text-right">
-                    <AccessBadge result={l.result} />
-                  </TableCell>
-                </TableRow>
-              ))}
-              {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
-                    Sin resultados para el filtro aplicado.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+            ))}
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                  Ninguna lectura coincide con el filtro.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TablePanel>
     </div>
   );
 }

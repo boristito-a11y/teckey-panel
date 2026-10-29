@@ -58,31 +58,50 @@ export function LectorEnVivo() {
   const Icon = shown ? RESULT_ICON[shown.result] : Nfc;
 
   return (
-    <section className="surface-card flex min-w-0 flex-col p-5">
-      <h3 className="text-lg font-semibold tracking-tight">Lector RFID en vivo</h3>
-      <p className="text-sm text-muted-foreground">
-        Cada tarjeta que pasa por un aula aparece aquí.
-      </p>
-
-      <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
-        <div
-          className={cn(
-            "relative grid h-36 w-36 place-items-center overflow-hidden rounded-full border-4 transition-colors duration-300",
-            tone ? tone.ring : "border-primary/70 bg-primary/5 text-primary",
-          )}
-        >
-          <Icon className="h-14 w-14" strokeWidth={1.6} />
-          {!shown && (
-            <span className="teckey-scan-line absolute inset-x-5 top-1/2 h-0.5 rounded-full bg-primary shadow-[0_0_12px_var(--color-primary)]" />
-          )}
-        </div>
-        <p className={cn("mt-4 text-lg font-semibold", tone?.text)} aria-live="polite">
-          {shown ? RESULT_TITLE[shown.result] : "Acerque la tarjeta al lector"}
+    <section className="surface-card flex min-w-0 flex-col">
+      <div className="border-b border-border px-5 py-4">
+        <h2 className="text-lg font-semibold">Lector RFID</h2>
+        <p className="text-sm text-muted-foreground">
+          Muestra la última tarjeta leída en cualquier aula.
         </p>
-        <p className="min-h-5 text-sm text-muted-foreground">
-          {shown
-            ? `${shown.professorName} · Aula ${shown.classroom} · ${shown.tag}`
-            : "Esperando lectura"}
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center px-5 py-6">
+        {/* Frente del lector: franja LED arriba y zona de lectura */}
+        <div className="w-44 overflow-hidden rounded-lg border border-foreground/20 bg-secondary">
+          <div
+            className={cn(
+              "h-1.5 transition-colors duration-300",
+              tone ? tone.led : "teckey-led-idle bg-primary",
+            )}
+          />
+          <div className="p-4">
+            <div
+              className={cn(
+                "relative grid aspect-square place-items-center overflow-hidden rounded-md border-2 border-dashed transition-colors duration-300",
+                tone ? tone.ring : "border-foreground/20 text-muted-foreground",
+              )}
+            >
+              <Icon className="h-12 w-12" strokeWidth={1.5} />
+              {!shown && (
+                <span className="teckey-scan-line absolute inset-x-4 top-1/2 h-px bg-primary" />
+              )}
+            </div>
+          </div>
+        </div>
+        <p className={cn("mt-4 text-base font-semibold", tone?.text)} aria-live="polite">
+          {shown ? RESULT_TITLE[shown.result] : "Esperando tarjeta"}
+        </p>
+        <p className="min-h-10 text-center text-sm text-muted-foreground">
+          {shown ? (
+            <>
+              {shown.professorName}
+              <br />
+              Aula {shown.classroom}, tarjeta <span className="font-mono">{shown.tag}</span>
+            </>
+          ) : (
+            "Acerca una tarjeta a cualquier lector"
+          )}
         </p>
       </div>
 
@@ -141,8 +160,8 @@ function Simulador() {
   };
 
   return (
-    <div className="space-y-3 border-t border-dashed border-border pt-4">
-      <p className="text-xs font-medium text-muted-foreground">Simulador (modo demostración)</p>
+    <div className="space-y-3 border-t border-border bg-secondary/50 px-5 py-4">
+      <p className="text-sm font-medium">Simular una lectura</p>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem]">
         <Select value={cardId} onValueChange={pickCard}>
           <SelectTrigger aria-label="Tarjeta" className="min-w-0 [&>span]:truncate">
@@ -151,8 +170,7 @@ function Simulador() {
           <SelectContent>
             {cards.map((c) => (
               <SelectItem key={c.id} value={c.id}>
-                {c.code} · {owner(c.professorId)}
-                {c.status === "Inactiva" ? " (inactiva)" : ""}
+                {owner(c.professorId)} ({c.code}){c.status === "Inactiva" ? " (inactiva)" : ""}
               </SelectItem>
             ))}
           </SelectContent>

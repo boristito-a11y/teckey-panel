@@ -17,19 +17,21 @@ import {
 } from "recharts";
 
 import { Button } from "@/components/ui/button";
+import { accessTone } from "@/components/teckey/AccessBadge";
+import { PageHeader } from "@/components/teckey/Page";
 import { downloadCsv } from "@/lib/csv";
 import { BLOCKS, DAYS, scheduleEntry, useTeckey, type AccessResult } from "@/lib/teckey-store";
 
 export const Route = createFileRoute("/reportes")({
   head: () => ({
     meta: [
-      { title: "Reportes — TECKEY System" },
+      { title: "Reportes — TECKEY" },
       {
         name: "description",
         content:
           "Ocupación de aulas por día y bloque, resultados de acceso por pabellón y estado de tarjetas RFID.",
       },
-      { property: "og:title", content: "Reportes — TECKEY System" },
+      { property: "og:title", content: "Reportes — TECKEY" },
       {
         property: "og:description",
         content:
@@ -122,24 +124,20 @@ function ReportesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Reportes</h2>
-          <p className="text-sm text-muted-foreground">
-            Uso de aulas y resultados de acceso · Semana {week} del semestre 2026-II
-          </p>
-        </div>
-        <Button variant="outline" onClick={exportCsv}>
-          <Download className="mr-2 h-4 w-4" /> Exportar ocupación
-        </Button>
-      </div>
+      <PageHeader
+        title="Reportes"
+        description={`Uso de las aulas y resultado de las lecturas en la semana ${week} del semestre 2026-II.`}
+        actions={
+          <Button variant="outline" onClick={exportCsv}>
+            <Download className="mr-2 h-4 w-4" /> Exportar ocupación
+          </Button>
+        }
+      />
 
       <section className="surface-card p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold tracking-tight">
-              Ocupación de aulas por día y bloque
-            </h3>
+            <h2 className="text-lg font-semibold">Ocupación de aulas por día y bloque</h2>
             <p className="text-sm text-muted-foreground">
               Aulas con clase de un total de {total}. El bloque más cargado es el{" "}
               {DAYS[busiest.d]?.toLowerCase()} de {BLOCKS[busiest.b]?.label} ({busiest.n} aulas).
@@ -148,7 +146,7 @@ function ReportesPage() {
           <Legenda />
         </div>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[640px] border-separate border-spacing-1 text-xs">
+          <table className="w-full min-w-[640px] border-separate border-spacing-px text-xs">
             <thead>
               <tr>
                 <th className="w-28 text-left font-medium text-muted-foreground">Bloque</th>
@@ -172,7 +170,7 @@ function ReportesPage() {
                       <td
                         key={d}
                         title={`${d} ${b.label}: ${n} de ${total} aulas (${pct}%)`}
-                        className="h-10 rounded-md text-center font-semibold tabular-nums"
+                        className="h-10 text-center font-display text-base font-semibold"
                         style={{
                           background: `color-mix(in oklch, var(--color-primary) ${Math.max(6, pct)}%, var(--color-card))`,
                           color:
@@ -194,7 +192,7 @@ function ReportesPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="surface-card p-5">
-          <h3 className="text-lg font-semibold tracking-tight">Lecturas por pabellón</h3>
+          <h2 className="text-lg font-semibold">Lecturas por pabellón</h2>
           <p className="text-sm text-muted-foreground">
             Resultado de cada tarjeta pasada en el registro.
           </p>
@@ -220,7 +218,9 @@ function ReportesPage() {
                   <Bar
                     key={r}
                     dataKey={r}
+                    name={accessTone[r].label}
                     stackId="a"
+                    isAnimationActive={false}
                     fill={RESULT_COLOR[r]}
                     radius={i === RESULTS.length - 1 ? [6, 6, 0, 0] : 0}
                     maxBarSize={72}
@@ -232,7 +232,7 @@ function ReportesPage() {
         </section>
 
         <section className="surface-card p-5">
-          <h3 className="text-lg font-semibold tracking-tight">Estado de las tarjetas RFID</h3>
+          <h2 className="text-lg font-semibold">Estado de las tarjetas RFID</h2>
           <p className="text-sm text-muted-foreground">
             {cards.length} tarjetas registradas en el sistema.
           </p>
@@ -240,6 +240,7 @@ function ReportesPage() {
             <ResponsiveContainer width="100%" height={256}>
               <PieChart>
                 <Pie
+                  isAnimationActive={false}
                   data={cardStatus}
                   dataKey="value"
                   nameKey="name"
@@ -269,9 +270,7 @@ function ReportesPage() {
       </div>
 
       <section className="surface-card p-5">
-        <h3 className="text-lg font-semibold tracking-tight">
-          Docentes con más intentos rechazados
-        </h3>
+        <h2 className="text-lg font-semibold">Docentes con más intentos rechazados</h2>
         <p className="text-sm text-muted-foreground">
           Lecturas denegadas o fuera de horario. Útil para detectar tarjetas dañadas o horarios mal
           cargados.
@@ -311,7 +310,7 @@ function Legenda() {
       {[6, 25, 45, 65, 85].map((p) => (
         <span
           key={p}
-          className="h-3.5 w-3.5 rounded"
+          className="h-3.5 w-3.5 rounded-[2px]"
           style={{
             background: `color-mix(in oklch, var(--color-primary) ${p}%, var(--color-card))`,
           }}

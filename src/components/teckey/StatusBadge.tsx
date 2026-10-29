@@ -19,15 +19,13 @@ export const statusCircle: Record<SlotStatus, string> = {
   disponible: "bg-available text-available-foreground ring-available/30",
 };
 
+/** Entrada de leyenda: cuadro de color + nombre del estado. */
 export function StatusPill({ status, className }: { status: SlotStatus; className?: string }) {
   return (
     <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 text-xs font-medium",
-        className,
-      )}
+      className={cn("inline-flex items-center gap-1.5 text-xs text-muted-foreground", className)}
     >
-      <span className={cn("h-2 w-2 rounded-full", statusDot[status])} />
+      <span className={cn("h-2.5 w-2.5 rounded-[2px]", statusDot[status])} />
       {statusLabel[status]}
     </span>
   );

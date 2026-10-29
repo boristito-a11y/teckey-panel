@@ -5,9 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * TECKEY design system — institutional palette.
- * navy (primary), slate (surfaces/text), emerald (programado),
- * crimson (ocupado / denegado), amber (disponible).
+ * TECKEY — lenguaje de plano arquitectónico.
+ * Papel gris frío, tinta grafito, azul de plano como acento.
+ * Estados de aula con colores de señalética: rojo ladrillo (ocupado),
+ * verde (programado), ámbar (disponible).
+ * Tipos: Public Sans (interfaz), Barlow Condensed (códigos de aula y cifras),
+ * IBM Plex Mono (UID de tarjetas).
  */
 
 @theme inline {
@@ -60,79 +63,113 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --shadow-card: 0 1px 2px oklch(0.25 0.06 258 / 0.06), 0 8px 24px oklch(0.25 0.06 258 / 0.06);
-  --shadow-pop: 0 18px 50px oklch(0.25 0.06 258 / 0.18);
+  --shadow-card: none;
+  --shadow-pop: 0 12px 32px rgb(16 24 40 / 0.14);
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.975 0.005 250);
-  --foreground: oklch(0.24 0.035 258);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.035 258);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.035 258);
+  --radius: 0.375rem;
+  --background: #f3f4f6;
+  --foreground: #18202b;
+  --card: #ffffff;
+  --card-foreground: #18202b;
+  --popover: #ffffff;
+  --popover-foreground: #18202b;
 
-  --navy: oklch(0.36 0.09 258);
-  --navy-deep: oklch(0.26 0.075 260);
-  --navy-foreground: oklch(0.98 0.005 250);
+  --navy: #2a4aa8;
+  --navy-deep: #1d3480;
+  --navy-foreground: #ffffff;
 
-  --primary: oklch(0.36 0.09 258);
-  --primary-foreground: oklch(0.98 0.005 250);
-  --secondary: oklch(0.945 0.008 250);
-  --secondary-foreground: oklch(0.3 0.05 258);
-  --muted: oklch(0.955 0.007 250);
-  --muted-foreground: oklch(0.52 0.025 256);
-  --accent: oklch(0.93 0.02 250);
-  --accent-foreground: oklch(0.3 0.05 258);
+  --primary: #2a4aa8;
+  --primary-foreground: #ffffff;
+  --secondary: #edeff3;
+  --secondary-foreground: #2a3442;
+  --muted: #eef0f3;
+  --muted-foreground: #5e6b7b;
+  --accent: #e8edf8;
+  --accent-foreground: #233f94;
 
-  --occupied: oklch(0.53 0.21 22);
-  --occupied-foreground: oklch(0.985 0.005 250);
-  --scheduled: oklch(0.6 0.14 158);
-  --scheduled-foreground: oklch(0.985 0.005 250);
-  --available: oklch(0.79 0.16 75);
-  --available-foreground: oklch(0.28 0.06 60);
+  --occupied: #c23a2e;
+  --occupied-foreground: #ffffff;
+  --scheduled: #23855a;
+  --scheduled-foreground: #ffffff;
+  --available: #d6961c;
+  --available-foreground: #4a3206;
 
-  --destructive: oklch(0.53 0.21 22);
-  --destructive-foreground: oklch(0.985 0.005 250);
-  --border: oklch(0.9 0.012 252);
-  --input: oklch(0.9 0.012 252);
-  --ring: oklch(0.36 0.09 258);
+  --destructive: #c23a2e;
+  --destructive-foreground: #ffffff;
+  --border: #dde1e7;
+  --input: #cfd5dd;
+  --ring: #2a4aa8;
 
-  --chart-1: oklch(0.36 0.09 258);
-  --chart-2: oklch(0.6 0.14 158);
-  --chart-3: oklch(0.79 0.16 75);
-  --chart-4: oklch(0.53 0.21 22);
-  --chart-5: oklch(0.52 0.025 256);
+  --chart-1: #2a4aa8;
+  --chart-2: #23855a;
+  --chart-3: #d6961c;
+  --chart-4: #c23a2e;
+  --chart-5: #5e6b7b;
 
-  --sidebar: oklch(0.26 0.075 260);
-  --sidebar-foreground: oklch(0.9 0.02 250);
-  --sidebar-primary: oklch(0.6 0.14 158);
-  --sidebar-primary-foreground: oklch(0.985 0.005 250);
-  --sidebar-accent: oklch(0.33 0.08 259);
-  --sidebar-accent-foreground: oklch(0.985 0.005 250);
-  --sidebar-border: oklch(0.34 0.06 259);
-  --sidebar-ring: oklch(0.6 0.14 158);
+  --sidebar: #fafafb;
+  --sidebar-foreground: #4b5666;
+  --sidebar-primary: #2a4aa8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eaedf2;
+  --sidebar-accent-foreground: #18202b;
+  --sidebar-border: #dde1e7;
+  --sidebar-ring: #2a4aa8;
 }
 
 .dark {
-  --background: oklch(0.18 0.03 258);
-  --foreground: oklch(0.96 0.008 250);
-  --card: oklch(0.23 0.035 258);
-  --card-foreground: oklch(0.96 0.008 250);
-  --popover: oklch(0.23 0.035 258);
-  --popover-foreground: oklch(0.96 0.008 250);
-  --primary: oklch(0.7 0.1 255);
-  --primary-foreground: oklch(0.18 0.03 258);
-  --secondary: oklch(0.28 0.04 258);
-  --secondary-foreground: oklch(0.96 0.008 250);
-  --muted: oklch(0.28 0.04 258);
-  --muted-foreground: oklch(0.72 0.02 254);
-  --accent: oklch(0.32 0.05 258);
-  --accent-foreground: oklch(0.96 0.008 250);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.7 0.1 255);
+  --background: #0f141a;
+  --foreground: #e3e7ed;
+  --card: #161c24;
+  --card-foreground: #e3e7ed;
+  --popover: #1a212b;
+  --popover-foreground: #e3e7ed;
+
+  --navy: #8ca6f0;
+  --navy-deep: #6f8de0;
+  --navy-foreground: #0f141a;
+
+  --primary: #8ca6f0;
+  --primary-foreground: #0f141a;
+  --secondary: #1e2630;
+  --secondary-foreground: #d5dbe3;
+  --muted: #1c232d;
+  --muted-foreground: #95a1b1;
+  --accent: #1e2a44;
+  --accent-foreground: #c9d6fa;
+
+  --occupied: #e26a5e;
+  --occupied-foreground: #1b0906;
+  --scheduled: #4db585;
+  --scheduled-foreground: #06150e;
+  --available: #e5ae3f;
+  --available-foreground: #2a1c02;
+
+  --destructive: #e26a5e;
+  --destructive-foreground: #1b0906;
+  --border: #27303b;
+  --input: #313b47;
+  --ring: #8ca6f0;
+
+  --chart-1: #8ca6f0;
+  --chart-2: #4db585;
+  --chart-3: #e5ae3f;
+  --chart-4: #e26a5e;
+  --chart-5: #95a1b1;
+
+  --sidebar: #12171e;
+  --sidebar-foreground: #a4afbd;
+  --sidebar-primary: #8ca6f0;
+  --sidebar-primary-foreground: #0f141a;
+  --sidebar-accent: #1e2630;
+  --sidebar-accent-foreground: #e3e7ed;
+  --sidebar-border: #232b35;
+  --sidebar-ring: #8ca6f0;
+  color-scheme: dark;
 }
 
 @layer base {
@@ -143,14 +180,26 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-feature-settings: "cv02", "cv03", "cv04";
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+    letter-spacing: -0.01em;
   }
 }
 
 /* Lector RFID en vivo: línea que recorre el círculo mientras espera una tarjeta */
 @keyframes teckey-scan {
-  0%, 100% { transform: translateY(-44px); opacity: 0.35; }
-  50% { transform: translateY(44px); opacity: 1; }
+  0%, 100% { transform: translateY(-36px); opacity: 0.25; }
+  50% { transform: translateY(36px); opacity: 0.9; }
+}
+@keyframes teckey-led {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.teckey-led-idle {
+  animation: teckey-led 1.8s ease-in-out infinite;
 }
 @keyframes teckey-arrive {
   from { background-color: color-mix(in oklch, var(--primary) 12%, transparent); }
@@ -163,12 +212,12 @@
   animation: teckey-arrive 1.2s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
-  .teckey-scan-line, .teckey-arrive { animation: none; }
+  .teckey-scan-line, .teckey-arrive, .teckey-led-idle { animation: none; }
 }
 
 @utility surface-card {
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-lg);
 }
+

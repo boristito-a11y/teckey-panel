@@ -29,17 +29,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { actions, professorName, useTeckey } from "@/lib/teckey-store";
-import { cn } from "@/lib/utils";
+import { PageHeader, StatusText, TablePanel, Tabs } from "@/components/teckey/Page";
 
 export const Route = createFileRoute("/tarjetas")({
   head: () => ({
     meta: [
-      { title: "Tarjetas RFID — TECKEY System" },
+      { title: "Tarjetas RFID — TECKEY" },
       {
         name: "description",
         content: "Tarjetas RFID asignadas, stock disponible y aulas autorizadas por docente.",
       },
-      { property: "og:title", content: "Tarjetas RFID — TECKEY System" },
+      { property: "og:title", content: "Tarjetas RFID — TECKEY" },
       {
         property: "og:description",
         content: "Tarjetas RFID asignadas, stock disponible y aulas autorizadas por docente.",
@@ -65,11 +65,11 @@ function TarjetasPage() {
 
   const confirmAssign = () => {
     if (!assignCard || !pick) {
-      toast.error("Seleccione un profesor");
+      toast.error("Elige un profesor");
       return;
     }
     actions.assignCard(assignCard, pick);
-    toast.success("Tarjeta vinculada correctamente");
+    toast.success("Tarjeta vinculada");
     setAssignCard(null);
     setPick("");
   };
@@ -82,40 +82,27 @@ function TarjetasPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Tarjetas RFID</h2>
-        <p className="text-sm text-muted-foreground">
-          {assigned.length} asignadas · {stock.length} en stock
-        </p>
-      </div>
+      <PageHeader
+        title="Tarjetas RFID"
+        description={`${assigned.length} tarjetas vinculadas a docentes y ${stock.length} en stock.`}
+      />
 
-      <div className="inline-flex rounded-xl border border-border bg-card p-1">
-        {(
-          [
-            ["asignadas", `Tarjetas Asignadas (${assigned.length})`],
-            ["stock", `Stock Disponible (${stock.length})`],
-          ] as const
-        ).map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={cn(
-              "rounded-lg px-5 py-2 text-sm font-medium transition-colors",
-              tab === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        value={tab}
+        onChange={setTab}
+        options={[
+          { key: "asignadas", label: "Asignadas", count: assigned.length },
+          { key: "stock", label: "En stock", count: stock.length },
+        ]}
+      />
 
-      <div className="surface-card overflow-x-auto p-5">
+      <TablePanel>
         {tab === "asignadas" ? (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
-                <TableHead>Profesor asignado</TableHead>
+                <TableHead>Profesor</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -125,28 +112,22 @@ function TarjetasPage() {
                 const prof = professors.find((p) => p.id === c.professorId);
                 return (
                   <TableRow key={c.id}>
-                    <TableCell className="font-mono font-medium">{c.code}</TableCell>
-                    <TableCell>{prof ? professorName(prof) : "—"}</TableCell>
+                    <TableCell className="font-mono">{c.code}</TableCell>
+                    <TableCell className="font-medium">{prof ? professorName(prof) : "—"}</TableCell>
                     <TableCell>
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
-                          c.status === "Activa"
-                            ? "bg-scheduled/15 text-scheduled"
-                            : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {c.status}
-                      </span>
+                      <StatusText tone={c.status === "Activa" ? "ok" : "muted"}>{c.status}</StatusText>
                     </TableCell>
                     <TableCell>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setScheduleCard(c.id)}>
-                          <CalendarRange className="mr-2 h-4 w-4" /> Ver Aulas Autorizadas
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => setScheduleCard(c.id)}>
+                          <CalendarRange className="mr-1.5 h-4 w-4" /> Aulas autorizadas
                         </Button>
                         <Button
-                          variant="destructive"
+                          variant="ghost"
                           size="sm"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Eliminar tarjeta ${c.code}`}
+                          title="Eliminar tarjeta"
                           onClick={() => {
                             actions.removeCard(c.id);
                             toast.error("Tarjeta eliminada", { description: c.code });
@@ -173,49 +154,47 @@ function TarjetasPage() {
             <TableBody>
               {stock.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-mono font-medium">{c.code}</TableCell>
+                  <TableCell className="font-mono">{c.code}</TableCell>
                   <TableCell>
-                    <span className="inline-flex rounded-full bg-available/25 px-2.5 py-1 text-xs font-semibold text-available-foreground">
-                      Sin asignar
-                    </span>
+                    <StatusText tone="warn">Sin asignar</StatusText>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" onClick={() => setAssignCard(c.id)}>
-                      <Link2 className="mr-2 h-4 w-4" /> Asignar a Profesor
+                    <Button variant="outline" size="sm" onClick={() => setAssignCard(c.id)}>
+                      <Link2 className="mr-1.5 h-4 w-4" /> Asignar a un profesor
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
               {stock.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-sm text-muted-foreground">
-                    No hay chips sin asignar.
+                  <TableCell colSpan={3} className="py-10 text-center text-sm text-muted-foreground">
+                    Todas las tarjetas están asignadas a un profesor.
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         )}
-      </div>
+      </TablePanel>
 
       <Dialog open={!!assignCard} onOpenChange={(o) => !o && setAssignCard(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Asignar tarjeta</DialogTitle>
             <DialogDescription>
-              Solo se listan profesores en estado “Sin Tarjeta”.
+              Solo aparecen los profesores que todavía no tienen tarjeta.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label>Profesor</Label>
             <Select value={pick} onValueChange={setPick}>
               <SelectTrigger>
-                <SelectValue placeholder="Seleccione un profesor sin tarjeta" />
+                <SelectValue placeholder="Elige un profesor" />
               </SelectTrigger>
               <SelectContent>
                 {withoutCard.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {professorName(p)} · DNI {p.dni}
+                    {professorName(p)} (DNI {p.dni})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -230,7 +209,7 @@ function TarjetasPage() {
             <Button variant="outline" onClick={() => setAssignCard(null)}>
               Cancelar
             </Button>
-            <Button onClick={confirmAssign}>Confirmar vinculación</Button>
+            <Button onClick={confirmAssign}>Vincular tarjeta</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -244,18 +223,18 @@ function TarjetasPage() {
               return (
                 <>
                   <DialogHeader>
-                    <DialogTitle>Aulas autorizadas · {card.code}</DialogTitle>
+                    <DialogTitle>Aulas autorizadas de {card.code}</DialogTitle>
                     <DialogDescription>
-                      {prof ? professorName(prof) : "—"} · Semestre 2026-II
+                      {prof ? professorName(prof) : "Sin profesor"}, semestre 2026-II
                     </DialogDescription>
                   </DialogHeader>
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-xs">
                       <thead>
                         <tr>
-                          <th className="border border-border bg-secondary p-2 text-left">Bloque</th>
+                          <th className="border border-border bg-secondary p-2 text-left font-medium text-muted-foreground">Bloque</th>
                           {days.map((d) => (
-                            <th key={d} className="border border-border bg-secondary p-2">
+                            <th key={d} className="border border-border bg-secondary p-2 font-medium text-muted-foreground">
                               {d}
                             </th>
                           ))}
@@ -273,7 +252,7 @@ function TarjetasPage() {
                               return (
                                 <td key={d} className="border border-border p-2 text-center">
                                   {show ? (
-                                    <span className="inline-flex rounded-md bg-scheduled/15 px-2 py-1 font-semibold text-scheduled">
+                                    <span className="font-display text-sm font-semibold text-scheduled">
                                       {room!.id}
                                     </span>
                                   ) : (

@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, CreditCard, Search, History } from "lucide-react";
+import { Plus, Trash2, Search, History } from "lucide-react";
 
 import { accessTone } from "@/components/teckey/AccessBadge";
+import { PageHeader, StatusText, TablePanel, Tabs } from "@/components/teckey/Page";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,12 +31,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/profesores")({
   head: () => ({
     meta: [
-      { title: "Gestión de Profesores — TECKEY System" },
+      { title: "Profesores — TECKEY" },
       {
         name: "description",
         content: "Registro de profesores, datos de contacto y vinculación de tarjetas RFID.",
       },
-      { property: "og:title", content: "Gestión de Profesores — TECKEY System" },
+      { property: "og:title", content: "Profesores — TECKEY" },
       {
         property: "og:description",
         content: "Registro de profesores, datos de contacto y vinculación de tarjetas RFID.",
@@ -77,131 +78,118 @@ function ProfesoresPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Gestión de Profesores</h2>
-          <p className="text-sm text-muted-foreground">
-            {professors.length} docentes registrados · {professors.filter((p) => !p.cardId).length} sin
-            tarjeta
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Agregar Nuevo Profesor
-        </Button>
-      </div>
+      <PageHeader
+        title="Profesores"
+        description={`${professors.length} docentes registrados, ${professors.filter((p) => !p.cardId).length} sin tarjeta RFID.`}
+        actions={
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Agregar profesor
+          </Button>
+        }
+      />
 
-      <div className="surface-card p-5">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex rounded-lg border border-border bg-secondary p-1">
-            {(
-              [
-                ["todos", "Todos"],
-                ["con", "Con Tarjeta"],
-                ["sin", "Sin Tarjeta"],
-              ] as const
-            ).map(([k, label]) => (
-              <button
-                key={k}
-                onClick={() => setFilter(k)}
-                className={cn(
-                  "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-                  filter === k
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="relative ml-auto w-full max-w-xs">
+      <Tabs
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { key: "todos", label: "Todos", count: professors.length },
+          { key: "con", label: "Con tarjeta", count: professors.filter((p) => p.cardId).length },
+          { key: "sin", label: "Sin tarjeta", count: professors.filter((p) => !p.cardId).length },
+        ]}
+      />
+
+      <TablePanel
+        toolbar={
+          <div className="relative w-full max-w-xs">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nombre o DNI"
+              aria-label="Buscar profesor"
               className="pl-9"
             />
           </div>
-        </div>
-
-        <div className="mt-4 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Profesor</TableHead>
-                <TableHead>DNI</TableHead>
-                <TableHead>Contacto</TableHead>
-                <TableHead>Tarjeta RFID</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((p) => {
-                const card = cards.find((c) => c.id === p.cardId);
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium">{professorName(p)}</TableCell>
-                    <TableCell className="text-muted-foreground">{p.dni}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <div className="text-xs">{p.correo}</div>
-                      <div className="text-xs">{p.celular}</div>
-                    </TableCell>
-                    <TableCell>
-                      {card ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-scheduled/15 px-2.5 py-1 text-xs font-semibold text-scheduled">
-                          <CreditCard className="h-3.5 w-3.5" /> {card.code}
-                        </span>
-                      ) : (
-                        <span className="inline-flex rounded-full bg-available/25 px-2.5 py-1 text-xs font-semibold text-available-foreground">
-                          Sin Tarjeta
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setHistoryId(p.id)}>
-                          <History className="mr-1.5 h-4 w-4" /> Historial
-                        </Button>
+        }
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Profesor</TableHead>
+              <TableHead>DNI</TableHead>
+              <TableHead>Contacto</TableHead>
+              <TableHead>Tarjeta RFID</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((p) => {
+              const card = cards.find((c) => c.id === p.cardId);
+              return (
+                <TableRow key={p.id}>
+                  <TableCell className="font-medium">{professorName(p)}</TableCell>
+                  <TableCell className="tabular-nums text-muted-foreground">{p.dni}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    <div>{p.correo}</div>
+                    <div className="tabular-nums">{p.celular}</div>
+                  </TableCell>
+                  <TableCell>
+                    {card ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="whitespace-nowrap font-mono text-sm">{card.code}</span>
+                        {card.status === "Inactiva" && <StatusText tone="bad">Inactiva</StatusText>}
+                      </span>
+                    ) : (
+                      <StatusText tone="warn">Sin tarjeta</StatusText>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => setHistoryId(p.id)}>
+                        <History className="mr-1.5 h-4 w-4" /> Historial
+                      </Button>
+                      {card && (
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          disabled={!card}
                           onClick={() => {
                             actions.unlinkCard(p.id);
-                            toast.success("Tarjeta deshabilitada", {
+                            toast.success("Tarjeta desvinculada", {
                               description: `${professorName(p)} quedó sin tarjeta.`,
                             });
                           }}
                         >
-                          Deshabilitar Tarjeta
+                          Desvincular tarjeta
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            actions.removeProfessor(p.id);
-                            toast.error("Profesor eliminado", { description: professorName(p) });
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
-                    No hay profesores para este filtro.
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        aria-label={`Eliminar a ${professorName(p)}`}
+                        title="Eliminar profesor"
+                        onClick={() => {
+                          actions.removeProfessor(p.id);
+                          toast.error("Profesor eliminado", { description: professorName(p) });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+              );
+            })}
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                  Ningún profesor coincide con la búsqueda.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TablePanel>
 
       <Dialog open={!!historyProf} onOpenChange={(o) => !o && setHistoryId(null)}>
         <DialogContent className="max-w-lg">
@@ -216,7 +204,7 @@ function ProfesoresPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Agregar nuevo profesor</DialogTitle>
+            <DialogTitle>Agregar profesor</DialogTitle>
             <DialogDescription>Los datos quedarán disponibles para asignar una tarjeta.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -271,7 +259,7 @@ function ProfessorHistory({ name }: { name: string }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {mine.length} lecturas · {granted} concedidas · {mine.length - granted} rechazadas
+        {mine.length} lecturas: {granted} concedidas y {mine.length - granted} rechazadas.
       </p>
       <ol className="max-h-80 space-y-4 overflow-y-auto border-l-2 border-border pl-5">
         {mine.map((l) => (
@@ -284,7 +272,7 @@ function ProfessorHistory({ name }: { name: string }) {
             />
             <p className={cn("text-sm font-semibold", accessTone[l.result].text)}>{accessTone[l.result].label}</p>
             <p className="text-xs text-muted-foreground">
-              <span className="tabular-nums">{l.datetime}</span> · Aula {l.classroom} ·{" "}
+              <span className="tabular-nums">{l.datetime}</span>, aula {l.classroom}, tarjeta{" "}
               <span className="font-mono">{l.tag}</span>
             </p>
           </li>

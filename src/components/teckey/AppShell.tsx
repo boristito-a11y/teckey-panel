@@ -1,24 +1,24 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Bell,
-  CalendarDays,
+  Building2,
   ChartColumn,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   CreditCard,
-  Building2,
   LayoutDashboard,
   LogOut,
+  Menu,
   Moon,
+  ScrollText,
   Sun,
   Users,
-  ScrollText,
-  Menu,
-  ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,30 +27,39 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { setSession } from "@/lib/auth";
 import { USE_MOCK } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-import { actions, WEEKS, useTeckey } from "@/lib/teckey-store";
+import { WEEKS, actions, useTeckey } from "@/lib/teckey-store";
 
-const nav = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/aulas", label: "Aulas y Pabellones", icon: Building2 },
-  { to: "/profesores", label: "Gestión de Profesores", icon: Users },
-  { to: "/tarjetas", label: "Tarjetas RFID", icon: CreditCard },
-  { to: "/solicitudes", label: "Solicitudes y Notificaciones", icon: ClipboardList },
-  { to: "/logs", label: "Registro de Accesos", icon: ScrollText },
-  { to: "/reportes", label: "Reportes", icon: ChartColumn },
+// Agrupado por el tipo de trabajo que hace la Oficina de Servicios
+const sections = [
+  {
+    title: "Operación",
+    items: [
+      { to: "/", label: "Resumen del día", icon: LayoutDashboard },
+      { to: "/aulas", label: "Aulas y pabellones", icon: Building2 },
+      { to: "/solicitudes", label: "Solicitudes", icon: ClipboardList },
+    ],
+  },
+  {
+    title: "Administración",
+    items: [
+      { to: "/profesores", label: "Profesores", icon: Users },
+      { to: "/tarjetas", label: "Tarjetas RFID", icon: CreditCard },
+    ],
+  },
+  {
+    title: "Auditoría",
+    items: [
+      { to: "/logs", label: "Registro de accesos", icon: ScrollText },
+      { to: "/reportes", label: "Reportes", icon: ChartColumn },
+    ],
+  },
 ] as const;
 
-/** Fecha de hoy en texto, p. ej. "Jueves, 29 de octubre de 2026". Vacía hasta montar (evita desajustes SSR). */
+/** Fecha de hoy, p. ej. "Jueves 29 de octubre". Vacía hasta montar (evita desajustes SSR). */
 function useToday() {
   const [text, setText] = useState("");
   useEffect(() => {
@@ -58,57 +67,121 @@ function useToday() {
       weekday: "long",
       day: "numeric",
       month: "long",
-      year: "numeric",
     });
-    setText(t.charAt(0).toUpperCase() + t.slice(1));
+    setText(t.charAt(0).toUpperCase() + t.slice(1).replace(",", ""));
   }, []);
   return text;
 }
 
+function Wordmark() {
+  return (
+    <div className="px-5 pb-6 pt-5">
+      <p className="font-display text-[1.7rem] font-semibold leading-none tracking-tight text-sidebar-accent-foreground">
+        TecKey
+      </p>
+      <p className="mt-1 text-xs text-sidebar-foreground">Control de acceso a aulas</p>
+    </div>
+  );
+}
+
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { requests } = useTeckey();
+  const pending = requests.filter((r) => r.status === "pendiente").length;
+
   return (
-    <nav className="flex flex-col gap-1 p-3">
-      {nav.map((item) => {
-        const active = pathname === item.to;
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-              active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--color-scheduled)]"
-                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-            )}
-          >
-            <item.icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{item.label}</span>
-          </Link>
-        );
-      })}
+    <nav className="flex flex-col gap-6 px-3">
+      {sections.map((section) => (
+        <div key={section.title}>
+          <p className="px-3 pb-1.5 text-xs font-medium text-sidebar-foreground/70">
+            {section.title}
+          </p>
+          <ul className="flex flex-col gap-0.5">
+            {section.items.map((item) => {
+              const active = pathname === item.to;
+              return (
+                <li key={item.to}>
+                  <Link
+                    to={item.to}
+                    onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex h-9 items-center gap-3 rounded-md px-3 text-sm transition-colors",
+                      active
+                        ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        active ? "text-sidebar-primary" : "opacity-70",
+                      )}
+                    />
+                    <span className="truncate">{item.label}</span>
+                    {item.to === "/solicitudes" && pending > 0 && (
+                      <span className="ml-auto font-display text-sm font-semibold text-occupied">
+                        {pending}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
     </nav>
   );
 }
 
-function Brand() {
+function SidebarFooter() {
   return (
-    <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
-      <div className="grid h-10 w-10 place-items-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-        <ShieldCheck className="h-5 w-5" />
-      </div>
-      <div className="leading-tight">
-        <p className="text-sm font-semibold tracking-wide text-sidebar-accent-foreground">TECKEY</p>
-        <p className="text-xs text-sidebar-foreground/70">Control de acceso RFID</p>
-      </div>
+    <div className="mt-auto border-t border-sidebar-border px-5 py-4 text-xs text-sidebar-foreground">
+      <p className="flex items-center gap-2">
+        <span
+          className={cn("h-1.5 w-1.5 rounded-full", USE_MOCK ? "bg-available" : "bg-scheduled")}
+        />
+        {USE_MOCK ? "Datos de demostración" : "Conectado a Spring Boot"}
+      </p>
+      <p className="mt-1 text-sidebar-foreground/70">Semestre 2026-II</p>
+    </div>
+  );
+}
+
+function WeekStepper() {
+  const { week } = useTeckey();
+  const first = WEEKS[0]!;
+  const last = WEEKS[WEEKS.length - 1]!;
+  return (
+    <div className="flex items-center rounded-md border border-border bg-card">
+      <button
+        className="grid h-8 w-8 place-items-center text-muted-foreground hover:text-foreground disabled:opacity-40"
+        onClick={() => actions.setWeek(week - 1)}
+        disabled={week <= first}
+        aria-label="Semana anterior"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <span className="whitespace-nowrap border-x border-border px-3 text-center text-sm sm:min-w-[7.5rem]">
+        Semana <span className="font-display text-base font-semibold">{week}</span>
+        <span className="hidden text-muted-foreground sm:inline"> de {last}</span>
+      </span>
+      <button
+        className="grid h-8 w-8 place-items-center text-muted-foreground hover:text-foreground disabled:opacity-40"
+        onClick={() => actions.setWeek(week + 1)}
+        disabled={week >= last}
+        aria-label="Semana siguiente"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
     </div>
   );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const { requests, week } = useTeckey();
+  const { requests } = useTeckey();
   const pending = requests.filter((r) => r.status === "pendiente").length;
   const today = useToday();
   const { theme, toggle } = useTheme();
@@ -121,61 +194,32 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col bg-sidebar lg:flex">
-        <Brand />
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+        <Wordmark />
         <NavList />
-        <div className="mt-auto space-y-1 p-4 text-xs text-sidebar-foreground/60">
-          <p className="flex items-center gap-2">
-            <span className={cn("h-2 w-2 rounded-full", USE_MOCK ? "bg-available" : "bg-scheduled")} />
-            {USE_MOCK ? "Datos de demostración" : "Conectado a Spring Boot"}
-          </p>
-          <p>Semestre 2026-II · v1.1</p>
-        </div>
+        <SidebarFooter />
       </aside>
 
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-border bg-card/85 backdrop-blur">
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="lg:pl-60">
+        <header className="sticky top-0 z-30 border-b border-border bg-card">
+          <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menú">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 bg-sidebar p-0">
+              <SheetContent side="left" className="flex w-64 flex-col bg-sidebar p-0">
                 <SheetTitle className="sr-only">Navegación</SheetTitle>
-                <Brand />
+                <Wordmark />
                 <NavList onNavigate={() => setOpen(false)} />
+                <SidebarFooter />
               </SheetContent>
             </Sheet>
 
-            <div className="mr-auto">
-              <h1 className="text-base font-semibold tracking-tight sm:text-lg">TECKEY System</h1>
-              <p className="hidden text-xs text-muted-foreground sm:block">
-                Gestión global de pabellones y accesos
-              </p>
-            </div>
+            <p className="mr-auto hidden text-sm text-muted-foreground md:block">{today}</p>
 
-            <div className="hidden min-h-9 items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-medium text-secondary-foreground md:flex">
-              <CalendarDays className="h-4 w-4 text-primary" />
-              {today}
-            </div>
-
-            <Select value={String(week)} onValueChange={(v) => actions.setWeek(Number(v))}>
-              <SelectTrigger className="w-[150px] bg-card text-xs" aria-label="Semana del ciclo">
-                <SelectValue>Semana {week}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <div className="px-2 py-1.5 text-[11px] text-muted-foreground">
-                  Semestre 2026-II: Ago 17 - Dic 05
-                </div>
-                {WEEKS.map((w) => (
-                  <SelectItem key={w} value={String(w)}>
-                    Semana {w}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <WeekStepper />
 
             <Button
               variant="ghost"
@@ -184,38 +228,47 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-label={theme === "dark" ? "Usar tema claro" : "Usar tema oscuro"}
               title={theme === "dark" ? "Tema claro" : "Tema oscuro"}
             >
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {theme === "dark" ? (
+                <Sun className="h-[18px] w-[18px]" />
+              ) : (
+                <Moon className="h-[18px] w-[18px]" />
+              )}
             </Button>
 
-            <Link to="/solicitudes" className="relative">
-              <Button variant="ghost" size="icon" aria-label="Alertas pendientes">
-                <Bell className="h-5 w-5" />
-              </Button>
+            <Link
+              to="/solicitudes"
+              className="relative grid h-9 w-9 place-items-center rounded-md text-foreground hover:bg-secondary"
+              aria-label={`${pending} solicitudes pendientes`}
+            >
+              <Bell className="h-[18px] w-[18px]" />
               {pending > 0 && (
-                <span className="pointer-events-none absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-destructive px-1 text-[11px] font-semibold text-destructive-foreground">
-                  {pending}
-                </span>
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-occupied ring-2 ring-card" />
               )}
             </Link>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                    AD
-                  </div>
-                  <div className="hidden leading-tight sm:block">
-                    <p className="text-xs font-semibold">Admin Central</p>
-                    <p className="text-[11px] text-muted-foreground">Oficina de Servicios</p>
-                  </div>
+                <button className="flex items-center gap-2.5 rounded-md py-1 pl-1 pr-2 text-left hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
+                    AC
+                  </span>
+                  <span className="hidden leading-tight sm:block">
+                    <span className="block text-sm font-medium">Admin Central</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Oficina de Servicios
+                    </span>
+                  </span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
                   admin@universidad.edu.pe
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={logout} className="text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onSelect={logout}
+                  className="text-destructive focus:text-destructive"
+                >
                   <LogOut className="mr-2 h-4 w-4" /> Cerrar sesión
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -223,7 +276,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="px-4 py-8 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );
