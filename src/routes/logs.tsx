@@ -20,8 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AccessBadge } from "@/components/teckey/AccessBadge";
+import { downloadCsv } from "@/lib/csv";
 import { useTeckey } from "@/lib/teckey-store";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/logs")({
   head: () => ({
@@ -55,6 +56,16 @@ function LogsPage() {
         l.tag.toLowerCase().includes(query.toLowerCase()),
     );
 
+  const exportCsv = () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv(
+      `teckey-accesos-${stamp}.csv`,
+      ["Fecha / Hora", "Aula", "Profesor", "RFID Tag ID", "Resultado"],
+      rows.map((l) => [l.datetime, l.classroom, l.professorName, l.tag, l.result]),
+    );
+    toast.success("Reporte exportado", { description: `${rows.length} registros en teckey-accesos-${stamp}.csv` });
+  };
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -64,10 +75,7 @@ function LogsPage() {
             Auditoría completa de lecturas RFID en los pabellones.
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => toast.success("Reporte exportado", { description: `${rows.length} registros en CSV.` })}
-        >
+        <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
           <Download className="mr-2 h-4 w-4" /> Exportar Reporte
         </Button>
       </div>
@@ -81,6 +89,7 @@ function LogsPage() {
             <SelectContent>
               <SelectItem value="todos">Todos los resultados</SelectItem>
               <SelectItem value="CONCEDIDO">Concedido</SelectItem>
+              <SelectItem value="FUERA DE HORARIO">Fuera de horario</SelectItem>
               <SelectItem value="DENEGADO">Denegado</SelectItem>
             </SelectContent>
           </Select>
@@ -115,16 +124,7 @@ function LogsPage() {
                   <TableCell>{l.professorName}</TableCell>
                   <TableCell className="font-mono text-xs">{l.tag}</TableCell>
                   <TableCell className="text-right">
-                    <span
-                      className={cn(
-                        "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
-                        l.result === "CONCEDIDO"
-                          ? "bg-scheduled/15 text-scheduled"
-                          : "bg-destructive/15 text-destructive",
-                      )}
-                    >
-                      {l.result}
-                    </span>
+                    <AccessBadge result={l.result} />
                   </TableCell>
                 </TableRow>
               ))}

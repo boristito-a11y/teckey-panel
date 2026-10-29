@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, CreditCard, Search } from "lucide-react";
+import { Plus, Trash2, CreditCard, Search, History } from "lucide-react";
+
+import { accessTone } from "@/components/teckey/AccessBadge";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,8 @@ function ProfesoresPage() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(empty);
+  const [historyId, setHistoryId] = useState<string | null>(null);
+  const historyProf = professors.find((p) => p.id === historyId);
 
   const rows = professors
     .filter((p) =>
@@ -156,6 +160,9 @@ function ProfesoresPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setHistoryId(p.id)}>
+                          <History className="mr-1.5 h-4 w-4" /> Historial
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -195,6 +202,16 @@ function ProfesoresPage() {
           </Table>
         </div>
       </div>
+
+      <Dialog open={!!historyProf} onOpenChange={(o) => !o && setHistoryId(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Historial de accesos</DialogTitle>
+            <DialogDescription>{historyProf ? professorName(historyProf) : ""}</DialogDescription>
+          </DialogHeader>
+          {historyProf && <ProfessorHistory name={professorName(historyProf)} />}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -238,6 +255,41 @@ function ProfesoresPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** Línea de tiempo con las lecturas de tarjeta de un docente, de la más reciente a la más antigua. */
+function ProfessorHistory({ name }: { name: string }) {
+  const { logs } = useTeckey();
+  const mine = logs.filter((l) => l.professorName === name);
+  const granted = mine.filter((l) => l.result === "CONCEDIDO").length;
+
+  if (mine.length === 0)
+    return <p className="py-4 text-sm text-muted-foreground">Este docente todavía no tiene lecturas registradas.</p>;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {mine.length} lecturas · {granted} concedidas · {mine.length - granted} rechazadas
+      </p>
+      <ol className="max-h-80 space-y-4 overflow-y-auto border-l-2 border-border pl-5">
+        {mine.map((l) => (
+          <li key={l.id} className="relative">
+            <span
+              className={cn(
+                "absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-card",
+                l.result === "CONCEDIDO" ? "bg-scheduled" : l.result === "DENEGADO" ? "bg-destructive" : "bg-available",
+              )}
+            />
+            <p className={cn("text-sm font-semibold", accessTone[l.result].text)}>{accessTone[l.result].label}</p>
+            <p className="text-xs text-muted-foreground">
+              <span className="tabular-nums">{l.datetime}</span> · Aula {l.classroom} ·{" "}
+              <span className="font-mono">{l.tag}</span>
+            </p>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

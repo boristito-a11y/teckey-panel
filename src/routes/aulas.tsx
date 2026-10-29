@@ -69,7 +69,8 @@ function useClock() {
 
 function AulasPage() {
   const [tab, setTab] = useState<"matriz" | "cronograma">("matriz");
-  const [week, setWeek] = useState(6);
+  const { week } = useTeckey();
+  const setWeek = actions.setWeek;
 
   return (
     <div className="mx-auto max-w-[95rem] space-y-6">

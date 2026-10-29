@@ -362,6 +362,8 @@ type State = {
   notifications: NotificationItem[];
   /** cardId -> "dia-bloque" -> ajuste manual de autorización */
   cardSlots: Record<string, Record<string, SlotOverride>>;
+  /** Semana del ciclo elegida en la barra superior; la usan todas las vistas del administrador. */
+  week: number;
 };
 
 let state: State = {
@@ -374,6 +376,7 @@ let state: State = {
   locks: {},
   notifications,
   cardSlots: {},
+  week: CURRENT_WEEK,
 };
 
 let seq = 0;
@@ -421,6 +424,19 @@ function set(partial: Partial<State>) {
 }
 
 export const actions = {
+  setWeek(week: number) {
+    set({ week });
+  },
+  /** Reemplaza datos con los que devuelve el backend de Spring Boot. */
+  hydrate(partial: Partial<Pick<State, "professors" | "cards" | "logs" | "requests">>) {
+    profScheduleCache.clear();
+    set(partial);
+  },
+  /** Agrega una lectura recibida en tiempo real (WebSocket) al registro. */
+  ingestLog(log: LogItem) {
+    if (state.logs.some((l) => l.id === log.id)) return;
+    set({ logs: [log, ...state.logs] });
+  },
   addProfessor(p: Omit<Professor, "id" | "cardId">) {
     set({
       professors: [...state.professors, { ...p, id: `P${Date.now()}`, cardId: null }],
@@ -731,7 +747,7 @@ export const actions = {
         notif({
           audience: "admin",
           kind: "danger",
-          title: "Apertura por contingencia (fallo de huella)",
+          title: "Apertura por contingencia (fallo del lector)",
           message: `${prof ? professorName(prof) : "Un docente"} solicita desbloqueo remoto del aula ${input.classroomId}: ${input.reason}`,
         }),
         ...state.notifications,

@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LogsRouteImport } from './routes/logs'
 import { Route as ProfesorRouteImport } from './routes/profesor'
 import { Route as ProfesoresRouteImport } from './routes/profesores'
+import { Route as ReportesRouteImport } from './routes/reportes'
 import { Route as SolicitudesRouteImport } from './routes/solicitudes'
 import { Route as TarjetasRouteImport } from './routes/tarjetas'
 
@@ -48,6 +49,11 @@ const ProfesoresRoute = ProfesoresRouteImport.update({
   path: '/profesores',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportesRoute = ReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SolicitudesRoute = SolicitudesRouteImport.update({
   id: '/solicitudes',
   path: '/solicitudes',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/logs': typeof LogsRoute
   '/profesor': typeof ProfesorRoute
   '/profesores': typeof ProfesoresRoute
+  '/reportes': typeof ReportesRoute
   '/solicitudes': typeof SolicitudesRoute
   '/tarjetas': typeof TarjetasRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/logs': typeof LogsRoute
   '/profesor': typeof ProfesorRoute
   '/profesores': typeof ProfesoresRoute
+  '/reportes': typeof ReportesRoute
   '/solicitudes': typeof SolicitudesRoute
   '/tarjetas': typeof TarjetasRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/logs': typeof LogsRoute
   '/profesor': typeof ProfesorRoute
   '/profesores': typeof ProfesoresRoute
+  '/reportes': typeof ReportesRoute
   '/solicitudes': typeof SolicitudesRoute
   '/tarjetas': typeof TarjetasRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/logs'
     | '/profesor'
     | '/profesores'
+    | '/reportes'
     | '/solicitudes'
     | '/tarjetas'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/logs'
     | '/profesor'
     | '/profesores'
+    | '/reportes'
     | '/solicitudes'
     | '/tarjetas'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/logs'
     | '/profesor'
     | '/profesores'
+    | '/reportes'
     | '/solicitudes'
     | '/tarjetas'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   LogsRoute: typeof LogsRoute
   ProfesorRoute: typeof ProfesorRoute
   ProfesoresRoute: typeof ProfesoresRoute
+  ReportesRoute: typeof ReportesRoute
   SolicitudesRoute: typeof SolicitudesRoute
   TarjetasRoute: typeof TarjetasRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfesoresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reportes': {
+      id: '/reportes'
+      path: '/reportes'
+      fullPath: '/reportes'
+      preLoaderRoute: typeof ReportesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/solicitudes': {
       id: '/solicitudes'
       path: '/solicitudes'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   LogsRoute: LogsRoute,
   ProfesorRoute: ProfesorRoute,
   ProfesoresRoute: ProfesoresRoute,
+  ReportesRoute: ReportesRoute,
   SolicitudesRoute: SolicitudesRoute,
   TarjetasRoute: TarjetasRoute,
 }

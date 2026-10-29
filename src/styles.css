@@ -147,6 +147,25 @@
   }
 }
 
+/* Lector RFID en vivo: línea que recorre el círculo mientras espera una tarjeta */
+@keyframes teckey-scan {
+  0%, 100% { transform: translateY(-44px); opacity: 0.35; }
+  50% { transform: translateY(44px); opacity: 1; }
+}
+@keyframes teckey-arrive {
+  from { background-color: color-mix(in oklch, var(--primary) 12%, transparent); }
+  to { background-color: transparent; }
+}
+.teckey-scan-line {
+  animation: teckey-scan 2.2s ease-in-out infinite;
+}
+.teckey-arrive {
+  animation: teckey-arrive 1.2s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .teckey-scan-line, .teckey-arrive { animation: none; }
+}
+
 @utility surface-card {
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
