@@ -6,7 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  CreditCard,
+  Fingerprint,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -47,7 +47,7 @@ const sections = [
     title: "Administración",
     items: [
       { to: "/profesores", label: "Profesores", icon: Users },
-      { to: "/tarjetas", label: "Tarjetas RFID", icon: CreditCard },
+      { to: "/huellas", label: "Huellas digitales", icon: Fingerprint },
     ],
   },
   {

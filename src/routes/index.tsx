@@ -31,12 +31,12 @@ export const Route = createFileRoute("/")({
       { title: "Resumen del día — TECKEY" },
       {
         name: "description",
-        content: "Plano en vivo de los pabellones, lecturas RFID y solicitudes pendientes.",
+        content: "Plano en vivo de los pabellones, lecturas de huella y solicitudes pendientes.",
       },
       { property: "og:title", content: "Resumen del día — TECKEY" },
       {
         property: "og:description",
-        content: "Plano en vivo de los pabellones, lecturas RFID y solicitudes pendientes.",
+        content: "Plano en vivo de los pabellones, lecturas de huella y solicitudes pendientes.",
       },
     ],
   }),
@@ -155,12 +155,12 @@ function Dashboard() {
         <Stat
           label="Profesores con acceso"
           value={String(withAccess)}
-          hint={`De ${professors.length} registrados, con tarjeta activa`}
+          hint={`De ${professors.length} registrados, con huella activa`}
         />
         <Stat
-          label="Tarjetas asignadas"
-          value={`${assigned}/${cards.length}`}
-          hint={`${cards.length - assigned} en stock sin asignar`}
+          label="Huellas registradas"
+          value={`${assigned}/${professors.length}`}
+          hint={`${professors.length - assigned} docentes sin registrar su huella`}
         />
         <Stat
           label="Intentos rechazados"

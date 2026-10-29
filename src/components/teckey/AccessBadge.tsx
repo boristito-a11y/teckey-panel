@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { AccessResult } from "@/lib/teckey-store";
 
-/** Verde = concedido, ámbar = fuera de horario, rojo = denegado (tarjeta deshabilitada o desconocida). */
+/** Verde = concedido, ámbar = fuera de horario, rojo = denegado (huella deshabilitada o no registrada). */
 export const accessTone: Record<
   AccessResult,
   { badge: string; ring: string; text: string; dot: string; led: string; label: string }

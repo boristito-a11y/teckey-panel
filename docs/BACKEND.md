@@ -15,11 +15,13 @@ Los JSON usan los mismos nombres de campo que los tipos de `src/lib/teckey-store
 | Método | Ruta | Respuesta |
 |---|---|---|
 | GET | `/api/profesores` | `[{ id, nombres, apellidos, dni, correo, celular, cardId }]` |
-| GET | `/api/tarjetas` | `[{ id, code, uid, tech, status: "Activa" \| "Inactiva", professorId, registeredAt, note }]` |
+| GET | `/api/huellas` | `[{ id, code: "HD-001", uid, tech: "Índice derecho", status: "Activa" \| "Inactiva", professorId, registeredAt, note }]` |
 | GET | `/api/accesos?limite=200` | `[{ id, datetime: "dd/MM/yyyy HH:mm", classroom, professorName, tag, result }]` |
 | GET | `/api/solicitudes` | `[{ id, professorId, classroom, reason, requestedAt, duration, status, kind, week, day, blockIndex }]` |
 
 `result` es `CONCEDIDO`, `FUERA DE HORARIO` o `DENEGADO`.
+
+En `/api/huellas`, `code` es el ID de la plantilla guardada en el sensor (por ejemplo un R307 o AS608 guarda hasta 1000 plantillas: HD-001 a HD-1000) y `tech` es el dedo registrado. En `/api/accesos`, `tag` es ese mismo `code`, o `SIN-HUELLA` / `DESCONOCIDA` cuando el dedo no está registrado.
 
 Habilita CORS para el origen del panel (por ejemplo `http://localhost:5180`):
 
@@ -35,7 +37,7 @@ public class CorsConfig implements WebMvcConfigurer {
 
 ## Tiempo real (WebSocket STOMP)
 
-Cada vez que el lector RFID de un aula lee una tarjeta, publica la lectura en `/topic/accesos` con la misma forma que un elemento de `/api/accesos`. El Dashboard la muestra al instante en "Eventos en tiempo real" y en el "Lector RFID en vivo".
+Cada vez que el lector de huella de un aula lee un dedo, publica la lectura en `/topic/accesos` con la misma forma que un elemento de `/api/accesos`. El Dashboard la muestra al instante en "Últimas lecturas" y en el "Lector de huella".
 
 Dependencia: `spring-boot-starter-websocket`
 
@@ -71,4 +73,4 @@ public class AccesoService {
 
 ## Pendiente
 
-Las acciones que modifican datos (asignar tarjeta, aprobar solicitud, abrir aula, etc.) todavía cambian solo el estado en memoria del navegador. El siguiente paso es que cada función de `actions` en `teckey-store.ts` llame también a su endpoint `POST`/`PUT`/`DELETE`.
+Las acciones que modifican datos (registrar o deshabilitar una huella, aprobar solicitudes, abrir aulas, etc.) todavía cambian solo el estado en memoria del navegador. El siguiente paso es que cada función de `actions` en `teckey-store.ts` llame también a su endpoint `POST`/`PUT`/`DELETE`.

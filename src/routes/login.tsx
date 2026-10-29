@@ -28,9 +28,9 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Iniciar Sesión — TECKEY System" },
-      { name: "description", content: "Acceso para administradores y docentes al sistema de control RFID TECKEY." },
+      { name: "description", content: "Acceso para administradores y docentes al sistema de control de acceso biométrico TECKEY." },
       { property: "og:title", content: "Iniciar Sesión — TECKEY System" },
-      { property: "og:description", content: "Acceso para administradores y docentes al sistema de control RFID TECKEY." },
+      { property: "og:description", content: "Acceso para administradores y docentes al sistema de control de acceso biométrico TECKEY." },
     ],
   }),
   component: LoginPage,
@@ -74,7 +74,7 @@ function LoginPage() {
             Cada aula de los pabellones F y B, abierta solo para quien tiene clase.
           </h1>
           <p className="mt-4 text-muted-foreground">
-            Las tarjetas RFID de los docentes abren la puerta en su bloque horario. La Oficina de Servicios ve
+            La huella digital de cada docente abre la puerta del aula solo en su bloque horario. La Oficina de Servicios ve
             en vivo qué aulas están ocupadas y atiende las solicitudes especiales.
           </p>
           <div className="mt-10" aria-hidden="true">

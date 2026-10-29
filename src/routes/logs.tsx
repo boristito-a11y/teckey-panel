@@ -24,12 +24,12 @@ export const Route = createFileRoute("/logs")({
       { title: "Registro de accesos — TECKEY" },
       {
         name: "description",
-        content: "Auditoría de accesos RFID con fecha, aula, docente, tag y resultado del intento.",
+        content: "Auditoría de lecturas de huella con fecha, aula, docente y resultado del intento.",
       },
       { property: "og:title", content: "Registro de accesos — TECKEY" },
       {
         property: "og:description",
-        content: "Auditoría de accesos RFID con fecha, aula, docente, tag y resultado del intento.",
+        content: "Auditoría de lecturas de huella con fecha, aula, docente y resultado del intento.",
       },
     ],
   }),
@@ -54,7 +54,7 @@ function LogsPage() {
     const stamp = new Date().toISOString().slice(0, 10);
     downloadCsv(
       `teckey-accesos-${stamp}.csv`,
-      ["Fecha / Hora", "Aula", "Profesor", "RFID Tag ID", "Resultado"],
+      ["Fecha / Hora", "Aula", "Profesor", "Huella", "Resultado"],
       rows.map((l) => [l.datetime, l.classroom, l.professorName, l.tag, l.result]),
     );
     toast.success("Reporte exportado", { description: `${rows.length} registros en teckey-accesos-${stamp}.csv` });
@@ -64,7 +64,7 @@ function LogsPage() {
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
         title="Registro de accesos"
-        description="Cada lectura de tarjeta en los lectores de aula, de la más reciente a la más antigua."
+        description="Cada lectura de huella en los lectores de aula, de la más reciente a la más antigua."
         actions={
           <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
             <Download className="mr-2 h-4 w-4" /> Exportar CSV
@@ -91,7 +91,7 @@ function LogsPage() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar aula, profesor o tarjeta"
+                placeholder="Buscar aula, profesor o ID de huella"
                 aria-label="Buscar en el registro"
                 className="pl-9"
               />
@@ -108,7 +108,7 @@ function LogsPage() {
               <TableHead>Fecha y hora</TableHead>
               <TableHead>Aula</TableHead>
               <TableHead>Profesor</TableHead>
-              <TableHead>Tarjeta</TableHead>
+              <TableHead>Huella</TableHead>
               <TableHead className="text-right">Resultado</TableHead>
             </TableRow>
           </TableHeader>

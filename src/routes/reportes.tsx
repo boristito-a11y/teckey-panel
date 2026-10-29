@@ -29,13 +29,13 @@ export const Route = createFileRoute("/reportes")({
       {
         name: "description",
         content:
-          "Ocupación de aulas por día y bloque, resultados de acceso por pabellón y estado de tarjetas RFID.",
+          "Ocupación de aulas por día y bloque, resultados de acceso por pabellón y estado de las huellas digitales.",
       },
       { property: "og:title", content: "Reportes — TECKEY" },
       {
         property: "og:description",
         content:
-          "Ocupación de aulas por día y bloque, resultados de acceso por pabellón y estado de tarjetas RFID.",
+          "Ocupación de aulas por día y bloque, resultados de acceso por pabellón y estado de las huellas digitales.",
       },
     ],
   }),
@@ -58,7 +58,7 @@ const tooltipStyle = {
 };
 
 function ReportesPage() {
-  const { classrooms, emergencies, logs, cards, week } = useTeckey();
+  const { classrooms, emergencies, logs, cards, professors, week } = useTeckey();
 
   // Aulas con clase en cada día y bloque de la semana elegida (horario base + emergencias)
   const occupancy = useMemo(
@@ -97,18 +97,18 @@ function ReportesPage() {
 
   const cardStatus = [
     {
-      name: "Asignadas y activas",
+      name: "Activas",
       value: cards.filter((c) => c.professorId && c.status === "Activa").length,
       color: "var(--color-scheduled)",
     },
     {
-      name: "Inactivas",
+      name: "Deshabilitadas",
       value: cards.filter((c) => c.status === "Inactiva").length,
       color: "var(--color-occupied)",
     },
     {
-      name: "En stock",
-      value: cards.filter((c) => !c.professorId && c.status === "Activa").length,
+      name: "Docentes sin huella",
+      value: professors.filter((p) => !p.cardId).length,
       color: "var(--color-available)",
     },
   ];
@@ -194,7 +194,7 @@ function ReportesPage() {
         <section className="surface-card p-5">
           <h2 className="text-lg font-semibold">Lecturas por pabellón</h2>
           <p className="text-sm text-muted-foreground">
-            Resultado de cada tarjeta pasada en el registro.
+            Resultado de cada huella leída en el registro.
           </p>
           <div className="mt-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -232,9 +232,9 @@ function ReportesPage() {
         </section>
 
         <section className="surface-card p-5">
-          <h2 className="text-lg font-semibold">Estado de las tarjetas RFID</h2>
+          <h2 className="text-lg font-semibold">Estado de las huellas digitales</h2>
           <p className="text-sm text-muted-foreground">
-            {cards.length} tarjetas registradas en el sistema.
+            {professors.length} docentes, {cards.length} con huella registrada.
           </p>
           <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
             <ResponsiveContainer width="100%" height={256}>
@@ -272,7 +272,7 @@ function ReportesPage() {
       <section className="surface-card p-5">
         <h2 className="text-lg font-semibold">Docentes con más intentos rechazados</h2>
         <p className="text-sm text-muted-foreground">
-          Lecturas denegadas o fuera de horario. Útil para detectar tarjetas dañadas o horarios mal
+          Lecturas denegadas o fuera de horario. Útil para detectar huellas mal registradas, lectores sucios o horarios mal
           cargados.
         </p>
         {rejected.length === 0 ? (

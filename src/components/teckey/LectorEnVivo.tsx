@@ -1,4 +1,4 @@
-import { Check, Clock, Nfc, X } from "lucide-react";
+import { Check, Clock, Fingerprint, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,8 @@ const RESULT_TITLE: Record<AccessResult, string> = {
 };
 
 /**
- * Muestra la última lectura del lector RFID: espera → verde / ámbar / rojo → espera.
- * En modo demostración incluye controles para simular el paso de una tarjeta.
+ * Muestra la última lectura de los lectores de huella: espera → verde / ámbar / rojo → espera.
+ * En modo demostración incluye controles para simular que un docente pone su huella.
  */
 export function LectorEnVivo() {
   const { logs } = useTeckey();
@@ -55,14 +55,14 @@ export function LectorEnVivo() {
   }, [logs]);
 
   const tone = shown ? accessTone[shown.result] : null;
-  const Icon = shown ? RESULT_ICON[shown.result] : Nfc;
+  const Icon = shown ? RESULT_ICON[shown.result] : Fingerprint;
 
   return (
     <section className="surface-card flex min-w-0 flex-col">
       <div className="border-b border-border px-5 py-4">
-        <h2 className="text-lg font-semibold">Lector RFID</h2>
+        <h2 className="text-lg font-semibold">Lector de huella</h2>
         <p className="text-sm text-muted-foreground">
-          Muestra la última tarjeta leída en cualquier aula.
+          Muestra la última huella leída en cualquier aula.
         </p>
       </div>
 
@@ -90,17 +90,17 @@ export function LectorEnVivo() {
           </div>
         </div>
         <p className={cn("mt-4 text-base font-semibold", tone?.text)} aria-live="polite">
-          {shown ? RESULT_TITLE[shown.result] : "Esperando tarjeta"}
+          {shown ? RESULT_TITLE[shown.result] : "Esperando huella"}
         </p>
         <p className="min-h-10 text-center text-sm text-muted-foreground">
           {shown ? (
             <>
               {shown.professorName}
               <br />
-              Aula {shown.classroom}, tarjeta <span className="font-mono">{shown.tag}</span>
+              Aula {shown.classroom}, huella <span className="font-mono">{shown.tag}</span>
             </>
           ) : (
-            "Acerca una tarjeta a cualquier lector"
+            "Apoya el dedo en cualquier lector de aula"
           )}
         </p>
       </div>
@@ -110,12 +110,12 @@ export function LectorEnVivo() {
   );
 }
 
-/** Controles de demostración: elegir tarjeta y aula, o dejar que pasen tarjetas solas. */
+/** Controles de demostración: elegir docente y aula, o dejar que lleguen lecturas solas. */
 function Simulador() {
   const state = useTeckey();
   const { cards, classrooms, professors } = state;
 
-  // Al elegir tarjeta, propone el aula donde tiene clase ahora (para que la demo muestre un acceso concedido).
+  // Al elegir docente, propone el aula donde tiene clase ahora (para que la demo muestre un acceso concedido).
   const suggestRoom = (id: string) => {
     const block = currentBlock();
     const slot = block ? cardSlot(state, id, state.week, todayIndex(), block.index) : null;
@@ -164,15 +164,17 @@ function Simulador() {
       <p className="text-sm font-medium">Simular una lectura</p>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem]">
         <Select value={cardId} onValueChange={pickCard}>
-          <SelectTrigger aria-label="Tarjeta" className="min-w-0 [&>span]:truncate">
+          <SelectTrigger aria-label="Docente" className="min-w-0 [&>span]:truncate">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {cards.map((c) => (
               <SelectItem key={c.id} value={c.id}>
-                {owner(c.professorId)} ({c.code}){c.status === "Inactiva" ? " (inactiva)" : ""}
+                {owner(c.professorId)} ({c.code}){c.status === "Inactiva" ? ", deshabilitada" : ""}
               </SelectItem>
             ))}
+            {/* Un dedo que no está en el lector: siempre se deniega */}
+            <SelectItem value="sin-registro">Huella no registrada</SelectItem>
           </SelectContent>
         </Select>
         <Select value={roomId} onValueChange={setRoomId}>
@@ -190,7 +192,7 @@ function Simulador() {
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button onClick={() => swipe()}>
-          <Nfc className="mr-2 h-4 w-4" /> Pasar tarjeta
+          <Fingerprint className="mr-2 h-4 w-4" /> Poner huella
         </Button>
         <div className="flex items-center gap-2">
           <Switch id="auto-sim" checked={auto} onCheckedChange={setAuto} />

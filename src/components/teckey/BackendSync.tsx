@@ -5,12 +5,12 @@ import { API_URL, USE_MOCK, WS_URL, api } from "@/lib/api";
 import { subscribeStomp } from "@/lib/stomp";
 import { actions, type LogItem } from "@/lib/teckey-store";
 
-/** Con backend real: carga los datos iniciales y agrega cada lectura RFID que llega por WebSocket. */
+/** Con backend real: carga los datos iniciales y agrega cada lectura de huella que llega por WebSocket. */
 export function BackendSync() {
   useEffect(() => {
     if (USE_MOCK) return;
 
-    Promise.all([api.profesores(), api.tarjetas(), api.accesos(), api.solicitudes()])
+    Promise.all([api.profesores(), api.huellas(), api.accesos(), api.solicitudes()])
       .then(([professors, cards, logs, requests]) =>
         actions.hydrate({ professors, cards, logs, requests }),
       )

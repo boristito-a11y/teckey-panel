@@ -34,12 +34,12 @@ export const Route = createFileRoute("/profesores")({
       { title: "Profesores — TECKEY" },
       {
         name: "description",
-        content: "Registro de profesores, datos de contacto y vinculación de tarjetas RFID.",
+        content: "Registro de profesores, datos de contacto y registro de huellas digitales.",
       },
       { property: "og:title", content: "Profesores — TECKEY" },
       {
         property: "og:description",
-        content: "Registro de profesores, datos de contacto y vinculación de tarjetas RFID.",
+        content: "Registro de profesores, datos de contacto y registro de huellas digitales.",
       },
     ],
   }),
@@ -80,7 +80,7 @@ function ProfesoresPage() {
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
         title="Profesores"
-        description={`${professors.length} docentes registrados, ${professors.filter((p) => !p.cardId).length} sin tarjeta RFID.`}
+        description={`${professors.length} docentes registrados, ${professors.filter((p) => !p.cardId).length} sin huella registrada.`}
         actions={
           <Button onClick={() => setOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Agregar profesor
@@ -93,8 +93,8 @@ function ProfesoresPage() {
         onChange={setFilter}
         options={[
           { key: "todos", label: "Todos", count: professors.length },
-          { key: "con", label: "Con tarjeta", count: professors.filter((p) => p.cardId).length },
-          { key: "sin", label: "Sin tarjeta", count: professors.filter((p) => !p.cardId).length },
+          { key: "con", label: "Con huella", count: professors.filter((p) => p.cardId).length },
+          { key: "sin", label: "Sin huella", count: professors.filter((p) => !p.cardId).length },
         ]}
       />
 
@@ -118,7 +118,7 @@ function ProfesoresPage() {
               <TableHead>Profesor</TableHead>
               <TableHead>DNI</TableHead>
               <TableHead>Contacto</TableHead>
-              <TableHead>Tarjeta RFID</TableHead>
+              <TableHead>Huella digital</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -140,7 +140,7 @@ function ProfesoresPage() {
                         {card.status === "Inactiva" && <StatusText tone="bad">Inactiva</StatusText>}
                       </span>
                     ) : (
-                      <StatusText tone="warn">Sin tarjeta</StatusText>
+                      <StatusText tone="warn">Sin registrar</StatusText>
                     )}
                   </TableCell>
                   <TableCell>
@@ -153,13 +153,13 @@ function ProfesoresPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            actions.unlinkCard(p.id);
-                            toast.success("Tarjeta desvinculada", {
-                              description: `${professorName(p)} quedó sin tarjeta.`,
+                            actions.removeCard(card.id);
+                            toast.success("Huella eliminada", {
+                              description: `${professorName(p)} debe registrar su huella de nuevo.`,
                             });
                           }}
                         >
-                          Desvincular tarjeta
+                          Eliminar huella
                         </Button>
                       )}
                       <Button
@@ -205,7 +205,7 @@ function ProfesoresPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Agregar profesor</DialogTitle>
-            <DialogDescription>Los datos quedarán disponibles para asignar una tarjeta.</DialogDescription>
+            <DialogDescription>Después podrás registrar su huella en Huellas digitales.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
             {(
@@ -247,7 +247,7 @@ function ProfesoresPage() {
   );
 }
 
-/** Línea de tiempo con las lecturas de tarjeta de un docente, de la más reciente a la más antigua. */
+/** Línea de tiempo con las lecturas de huella de un docente, de la más reciente a la más antigua. */
 function ProfessorHistory({ name }: { name: string }) {
   const { logs } = useTeckey();
   const mine = logs.filter((l) => l.professorName === name);
@@ -272,7 +272,7 @@ function ProfessorHistory({ name }: { name: string }) {
             />
             <p className={cn("text-sm font-semibold", accessTone[l.result].text)}>{accessTone[l.result].label}</p>
             <p className="text-xs text-muted-foreground">
-              <span className="tabular-nums">{l.datetime}</span>, aula {l.classroom}, tarjeta{" "}
+              <span className="tabular-nums">{l.datetime}</span>, aula {l.classroom}, huella{" "}
               <span className="font-mono">{l.tag}</span>
             </p>
           </li>

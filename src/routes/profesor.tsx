@@ -119,7 +119,7 @@ function ProfesorPage() {
             <CalendarPlus className="mr-2 h-4 w-4" /> Solicitar Aula de Recuperación
           </Button>
           <Button size="lg" variant="destructive" onClick={() => setConOpen(true)}>
-            <AlertTriangle className="mr-2 h-4 w-4" /> Apertura por Contingencia (Fallo del Lector)
+            <AlertTriangle className="mr-2 h-4 w-4" /> Apertura por contingencia (fallo de huella)
           </Button>
         </div>
 
@@ -296,7 +296,7 @@ function ContingencyDialog({ open, onOpenChange, profId, active }: {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Apertura por Contingencia (Fallo del Lector)</DialogTitle>
+          <DialogTitle>Apertura por contingencia (fallo de huella)</DialogTitle>
           <DialogDescription>Solicite al Administrador el desbloqueo remoto de la puerta de su clase activa.</DialogDescription>
         </DialogHeader>
         {active.length === 0 ? (
@@ -320,7 +320,7 @@ function ContingencyDialog({ open, onOpenChange, profId, active }: {
             </div>
             <div className="space-y-2">
               <Label>Justificación (obligatoria)</Label>
-              <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Describa el fallo del lector RFID" />
+              <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Describa el problema: el lector no reconoce su huella, dedo lastimado, etc." />
             </div>
           </div>
         )}

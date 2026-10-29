@@ -10,15 +10,21 @@ export type Professor = {
   cardId: string | null;
 };
 
-export const CARD_TECHS = ["MIFARE Classic 1K (13.56 MHz)", "MIFARE DESFire EV2 (13.56 MHz)", "EM4100 (125 kHz)"] as const;
-export type CardTech = (typeof CARD_TECHS)[number];
+/** Dedos que se pueden registrar en el lector biométrico. */
+export const FINGERS = ["Índice derecho", "Pulgar derecho", "Índice izquierdo", "Pulgar izquierdo"] as const;
+export type Finger = (typeof FINGERS)[number];
 
+/**
+ * Huella digital registrada de un docente. (El tipo conserva el nombre "Card" para no
+ * romper el resto del código; `code` es el ID de la plantilla en el lector, p. ej. HD-001.)
+ */
 export type Card = {
   id: string;
   code: string;
-  /** UID físico leído por el lector (8 caracteres hexadecimales). */
+  /** Huella de la plantilla guardada en el lector (8 caracteres hexadecimales). */
   uid: string;
-  tech: CardTech;
+  /** Dedo registrado */
+  tech: Finger;
   status: "Activa" | "Inactiva";
   professorId: string | null;
   registeredAt: string;
@@ -38,7 +44,7 @@ export type NotificationItem = {
   read: boolean;
 };
 
-/** Ajuste manual sobre la autorización de una tarjeta en un día/bloque. */
+/** Ajuste manual sobre la autorización de una huella en un día/bloque. */
 export type SlotOverride = { classroomId: string; enabled: boolean };
 
 /** Semana actual del ciclo usada para validar accesos en vivo. */
@@ -109,6 +115,11 @@ const courses: Array<[string, string]> = [
 
 const timeRanges = ["07:00 - 09:40", "09:50 - 11:30", "11:40 - 14:20", "14:30 - 15:10", "15:20 - 18:00"];
 
+/** ID de plantilla en el lector biométrico: HD-001, HD-002… */
+function fingerprintCode(slot: number) {
+  return `HD-${String(slot).padStart(3, "0")}`;
+}
+
 function hash(s: string) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000;
@@ -126,17 +137,18 @@ const professors: Professor[] = names.map(([nombres, apellidos], i) => ({
 }));
 
 const hexes = ["8A3F", "4C21", "9BD7", "2E55", "77A0", "C31B", "5F94", "E0D2", "1A6C", "B482", "3D19", "6E7F"];
-const cards: Card[] = hexes.map((h, i) => ({
+// Solo existen huellas de docentes ya registrados (no hay "stock" como con las tarjetas)
+const cards: Card[] = hexes.slice(0, 9).map((h, i) => ({
   id: `C${i + 1}`,
-  code: `RFID-${h}`,
+  code: fingerprintCode(i + 1),
   uid: `${h}${(hash(h) % 65536).toString(16).toUpperCase().padStart(4, "0")}`,
-  tech: CARD_TECHS[i % 3 === 2 ? 1 : 0]!,
+  tech: FINGERS[i % 4 === 3 ? 1 : 0]!,
   status: i === 3 ? "Inactiva" : "Activa",
   professorId: null,
   registeredAt: "17/08/2026",
 }));
 
-// Assign 9 of 12 cards to 9 of 12 professors
+// 9 de los 12 docentes ya registraron su huella
 for (let i = 0; i < 9; i++) {
   cards[i]!.professorId = professors[i]!.id;
   professors[i]!.cardId = cards[i]!.id;
@@ -271,16 +283,16 @@ const requests: RequestItem[] = [
 ];
 
 const logs: LogItem[] = [
-  ["26/09/2026 07:02", "F101", "P1", "RFID-8A3F", "CONCEDIDO"],
-  ["26/09/2026 07:05", "F204", "P2", "RFID-4C21", "CONCEDIDO"],
-  ["26/09/2026 07:41", "B103", "P5", "RFID-77A0", "FUERA DE HORARIO"],
-  ["26/09/2026 09:12", "F305", "P4", "RFID-2E55", "DENEGADO"],
-  ["26/09/2026 09:58", "B201", "P7", "RFID-5F94", "FUERA DE HORARIO"],
-  ["26/09/2026 10:31", "F102", "P3", "RFID-9BD7", "CONCEDIDO"],
-  ["26/09/2026 11:45", "B304", "P8", "RFID-E0D2", "CONCEDIDO"],
-  ["26/09/2026 12:20", "F203", "P6", "RFID-C31B", "FUERA DE HORARIO"],
-  ["26/09/2026 14:33", "B102", "P9", "RFID-1A6C", "CONCEDIDO"],
-  ["26/09/2026 15:07", "F301", "P2", "RFID-4C21", "CONCEDIDO"],
+  ["26/09/2026 07:02", "F101", "P1", "HD-001", "CONCEDIDO"],
+  ["26/09/2026 07:05", "F204", "P2", "HD-002", "CONCEDIDO"],
+  ["26/09/2026 07:41", "B103", "P5", "HD-005", "FUERA DE HORARIO"],
+  ["26/09/2026 09:12", "F305", "P4", "HD-004", "DENEGADO"],
+  ["26/09/2026 09:58", "B201", "P7", "HD-007", "FUERA DE HORARIO"],
+  ["26/09/2026 10:31", "F102", "P3", "HD-003", "CONCEDIDO"],
+  ["26/09/2026 11:45", "B304", "P8", "HD-008", "CONCEDIDO"],
+  ["26/09/2026 12:20", "F203", "P6", "HD-006", "FUERA DE HORARIO"],
+  ["26/09/2026 14:33", "B102", "P9", "HD-009", "CONCEDIDO"],
+  ["26/09/2026 15:07", "F301", "P2", "HD-002", "CONCEDIDO"],
 ].map((row, i) => {
   const [datetime, classroom, pid, tag, result] = row as string[];
   return {
@@ -321,9 +333,9 @@ const notifications: NotificationItem[] = [
     id: "N3",
     audience: "admin",
     kind: "danger",
-    title: "Acceso denegado por tarjeta deshabilitada",
+    title: "Acceso denegado por huella deshabilitada",
     message:
-      "La tarjeta RFID-2E55 de Jorge Luis Huamán Castro intentó abrir el aula F305 a las 09:12, pero se encuentra deshabilitada.",
+      "La huella HD-004 de Jorge Luis Huamán Castro intentó abrir el aula F305 a las 09:12, pero se encuentra deshabilitada.",
     time: "26/09/2026 09:12",
     read: false,
   },
@@ -332,9 +344,9 @@ const notifications: NotificationItem[] = [
     audience: "profesor",
     professorId: "P4",
     kind: "danger",
-    title: "Su tarjeta está deshabilitada",
+    title: "Su huella está deshabilitada",
     message:
-      "Estimado docente, su tarjeta RFID-2E55 fue deshabilitada por la administración. Acérquese a la Oficina de Servicios para su reactivación o reemplazo; sus horarios se conservan.",
+      "Estimado docente, su huella HD-004 fue deshabilitada por la administración. Acérquese a la Oficina de Servicios para reactivarla o registrarla de nuevo; sus horarios se conservan.",
     time: "25/09/2026 18:00",
     read: false,
   },
@@ -391,7 +403,7 @@ function notif(n: Omit<NotificationItem, "id" | "time" | "read">): NotificationI
 
 function cardCodeOf(professorId: string | undefined) {
   const prof = state.professors.find((p) => p.id === professorId);
-  return prof?.cardId ? state.cards.find((c) => c.id === prof.cardId)?.code ?? "SIN-TARJETA" : "SIN-TARJETA";
+  return prof?.cardId ? state.cards.find((c) => c.id === prof.cardId)?.code ?? "SIN-HUELLA" : "SIN-HUELLA";
 }
 
 const listeners = new Set<() => void>();
@@ -465,14 +477,14 @@ export const actions = {
           audience: "profesor",
           professorId,
           kind: "success",
-          title: "Tarjeta RFID asignada",
-          message: `Se le asignó la tarjeta ${card?.code}. Ya puede abrir las aulas de su horario académico; cualquier cambio de autorización le será notificado.`,
+          title: "Huella digital registrada",
+          message: `Se registró su huella ${card?.code}. Ya puede abrir las aulas de su horario académico; cualquier cambio de autorización le será notificado.`,
         }),
         notif({
           audience: "admin",
           kind: "info",
-          title: "Tarjeta vinculada",
-          message: `La tarjeta ${card?.code} quedó vinculada a ${prof ? professorName(prof) : "—"} con su horario académico autorizado.`,
+          title: "Huella registrada",
+          message: `La huella ${card?.code} quedó registrada para ${prof ? professorName(prof) : "—"} con su horario académico autorizado.`,
         }),
         ...state.notifications,
       ],
@@ -487,10 +499,11 @@ export const actions = {
       cardSlots: slots,
     });
   },
-  /** Registra una tarjeta nueva en stock (opcionalmente la vincula de inmediato). */
-  addCard(input: { uid: string; tech: CardTech; note?: string; professorId?: string }) {
+  /** Registra una huella nueva en el lector (opcionalmente la vincula de inmediato a un docente). */
+  addCard(input: { uid: string; tech: Finger; note?: string; professorId?: string }) {
     const id = uid("C");
-    const code = `RFID-${input.uid.slice(0, 4).toUpperCase()}`;
+    const lastSlot = Math.max(0, ...state.cards.map((c) => Number(c.code.replace(/\D/g, "")) || 0));
+    const code = fingerprintCode(lastSlot + 1);
     set({
       cards: [
         ...state.cards,
@@ -523,16 +536,16 @@ export const actions = {
                 audience: "profesor",
                 professorId: prof.id,
                 kind: "danger",
-                title: "Su tarjeta fue deshabilitada",
-                message: `Su tarjeta ${card.code} fue deshabilitada por la administración. No podrá abrir ninguna aula hasta su reactivación o reemplazo; sus datos y horarios se conservan.`,
+                title: "Su huella fue deshabilitada",
+                message: `Su huella ${card.code} fue deshabilitada por la administración. No podrá abrir ninguna aula hasta su reactivación o un nuevo registro; sus datos y horarios se conservan.`,
               }),
             ]
           : []),
         notif({
           audience: "admin",
           kind: "warning",
-          title: "Tarjeta deshabilitada",
-          message: `La tarjeta ${card.code}${prof ? ` de ${professorName(prof)}` : ""} quedó deshabilitada. Todo intento de acceso se registrará como DENEGADO.`,
+          title: "Huella deshabilitada",
+          message: `La huella ${card.code}${prof ? ` de ${professorName(prof)}` : ""} quedó deshabilitada. Todo intento de acceso se registrará como DENEGADO.`,
         }),
         ...state.notifications,
       ],
@@ -549,15 +562,15 @@ export const actions = {
               audience: "profesor",
               professorId: card.professorId,
               kind: "success",
-              title: "Su tarjeta fue reactivada",
-              message: `Su tarjeta ${card.code} vuelve a estar activa con el mismo horario autorizado que tenía antes de la deshabilitación.`,
+              title: "Su huella fue reactivada",
+              message: `Su huella ${card.code} vuelve a estar activa con el mismo horario autorizado que tenía antes de la deshabilitación.`,
             }),
             ...state.notifications,
           ]
         : state.notifications,
     });
   },
-  /** Pasa docente y horarios autorizados de una tarjeta a otra nueva del stock. */
+  /** Pasa docente y horarios autorizados de una huella a un nuevo registro. */
   transferCard(fromId: string, toId: string) {
     const from = state.cards.find((c) => c.id === fromId);
     const to = state.cards.find((c) => c.id === toId);
@@ -581,20 +594,20 @@ export const actions = {
           audience: "profesor",
           professorId: pid,
           kind: "success",
-          title: "Nueva tarjeta asignada",
-          message: `Su tarjeta ${from.code} fue reemplazada por ${to.code}. Todos sus horarios y aulas autorizadas se transfirieron sin cambios.`,
+          title: "Huella registrada de nuevo",
+          message: `Su huella ${from.code} fue reemplazada por ${to.code}. Todos sus horarios y aulas autorizadas se transfirieron sin cambios.`,
         }),
         notif({
           audience: "admin",
           kind: "info",
-          title: "Transferencia de tarjeta completada",
-          message: `Los datos y horarios de ${from.code} se transfirieron a ${to.code}. La tarjeta anterior quedó inactiva en stock.`,
+          title: "Reemplazo de huella completado",
+          message: `Los datos y horarios de ${from.code} se transfirieron a ${to.code}. La huella anterior quedó inactiva.`,
         }),
         ...state.notifications,
       ],
     });
   },
-  /** Habilita o deshabilita la autorización de una tarjeta en un día/bloque. */
+  /** Habilita o deshabilita la autorización de una huella en un día/bloque. */
   setCardSlot(cardId: string, day: number, blockIndex: number, override: SlotOverride | null) {
     const key = `${day}-${blockIndex}`;
     const current = { ...(state.cardSlots[cardId] ?? {}) };
@@ -614,15 +627,15 @@ export const actions = {
               title: override && !override.enabled ? "Acceso retirado en su horario" : "Horario de acceso actualizado",
               message:
                 override && !override.enabled
-                  ? `Su tarjeta ${card.code} ya no podrá abrir el aula ${room} el ${DAYS[day]} de ${block.label}.`
-                  : `Su tarjeta ${card.code} queda autorizada el ${DAYS[day]} de ${block.label}${room ? ` en el aula ${room}` : ""}.`,
+                  ? `Su huella ${card.code} ya no podrá abrir el aula ${room} el ${DAYS[day]} de ${block.label}.`
+                  : `Su huella ${card.code} queda autorizada el ${DAYS[day]} de ${block.label}${room ? ` en el aula ${room}` : ""}.`,
             }),
             ...state.notifications,
           ]
         : state.notifications,
     });
   },
-  /** Simula la lectura de una tarjeta en el lector de un aula. */
+  /** Simula la lectura de una huella en el lector de un aula. */
   swipeCard(cardId: string, classroomId: string): AccessResult {
     const card = state.cards.find((c) => c.id === cardId);
     const prof = state.professors.find((p) => p.id === card?.professorId);
@@ -690,7 +703,7 @@ export const actions = {
             status === "aprobada"
               ? r.kind === "contingencia"
                 ? `Su solicitud de ${what} fue aprobada. La puerta fue desbloqueada remotamente.`
-                : `Su solicitud de ${what} fue aprobada. Su tarjeta quedará habilitada durante ese periodo.`
+                : `Su solicitud de ${what} fue aprobada. Su huella quedará habilitada durante ese periodo.`
               : `Su solicitud de ${what} fue rechazada por la administración.`,
         }),
         ...state.notifications,
@@ -747,7 +760,7 @@ export const actions = {
         notif({
           audience: "admin",
           kind: "danger",
-          title: "Apertura por contingencia (fallo del lector)",
+          title: "Apertura por contingencia (fallo de huella)",
           message: `${prof ? professorName(prof) : "Un docente"} solicita desbloqueo remoto del aula ${input.classroomId}: ${input.reason}`,
         }),
         ...state.notifications,
@@ -786,7 +799,7 @@ export const actions = {
           datetime: "26/09/2026 " + new Date().toTimeString().slice(0, 5),
           classroom: classroomId,
           professorName: prof ? professorName(prof) : "—",
-          tag: prof?.cardId ? state.cards.find((c) => c.id === prof.cardId)!.code : "SIN-TARJETA",
+          tag: prof?.cardId ? state.cards.find((c) => c.id === prof.cardId)!.code : "SIN-HUELLA",
           result: "CONCEDIDO",
         },
         ...state.logs,
@@ -794,7 +807,7 @@ export const actions = {
     });
   },
 
-  /** Valida el ingreso con tarjeta: el aula queda ABIERTA (Modo Clase) solo si la tarjeta está autorizada. */
+  /** Valida el ingreso con huella: el aula queda ABIERTA (Modo Clase) solo si la huella está autorizada. */
   openClassroom(classroomId: string, professorId: string | undefined, endsAtMinutes: number): AccessResult {
     const prof = state.professors.find((p) => p.id === professorId);
     if (prof?.cardId) {
@@ -831,7 +844,7 @@ export const actions = {
     return "CONCEDIDO";
   },
 
-  /** Cierre manual del docente con su tarjeta. */
+  /** Cierre manual del docente con su huella. */
   closeClassroom(classroomId: string, professorId: string | undefined, auto = false) {
     const prof = state.professors.find((p) => p.id === professorId);
     const locks = { ...state.locks };
@@ -844,7 +857,7 @@ export const actions = {
           datetime: logStamp(),
           classroom: classroomId,
           professorName: auto ? "Cierre Automático (sistema)" : prof ? professorName(prof) : "Administrador",
-          tag: auto ? "AUTO-CIERRE" : prof?.cardId ? state.cards.find((c) => c.id === prof.cardId)?.code ?? "SIN-TARJETA" : "SIN-TARJETA",
+          tag: auto ? "AUTO-CIERRE" : prof?.cardId ? state.cards.find((c) => c.id === prof.cardId)?.code ?? "SIN-HUELLA" : "SIN-HUELLA",
           result: "CONCEDIDO",
         },
         ...state.logs,
@@ -891,7 +904,7 @@ export const actions = {
             audience: "admin",
             kind: "warning",
             title: "Cierre automático ejecutado",
-            message: `El aula ${id} se cerró automáticamente tras 10 minutos de tolerancia porque el docente no pasó su tarjeta al finalizar la clase.`,
+            message: `El aula ${id} se cerró automáticamente tras 10 minutos de tolerancia porque el docente no registró su huella al finalizar la clase.`,
           }),
         ),
         ...state.notifications,
@@ -922,7 +935,7 @@ export const actions = {
           professorId: e.professorId,
           kind: "success",
           title: "Clase de emergencia habilitada",
-          message: `Se le habilitó el aula ${e.classroomId} el ${DAYS[e.day]} (semana ${e.week}) de ${block.label}, por ${e.minutes} minutos. Su tarjeta abrirá la puerta solo durante ese periodo.`,
+          message: `Se le habilitó el aula ${e.classroomId} el ${DAYS[e.day]} (semana ${e.week}) de ${block.label}, por ${e.minutes} minutos. Su huella abrirá la puerta solo durante ese periodo.`,
         }),
         ...state.notifications,
       ],
@@ -943,15 +956,15 @@ function pushAccess(classroomId: string, name: string, tag: string, result: Acce
               title: result === "DENEGADO" ? "Acceso denegado" : "Intento fuera de horario",
               message:
                 result === "DENEGADO"
-                  ? `La tarjeta ${tag} (${name}) intentó abrir el aula ${classroomId}, pero está deshabilitada o no registrada.`
-                  : `La tarjeta ${tag} (${name}) intentó abrir el aula ${classroomId} fuera de su horario autorizado.`,
+                  ? `La huella ${tag} (${name}) intentó abrir el aula ${classroomId}, pero está deshabilitada o no registrada.`
+                  : `La huella ${tag} (${name}) intentó abrir el aula ${classroomId} fuera de su horario autorizado.`,
             }),
             ...state.notifications,
           ],
   });
 }
 
-// ---------------- Autorizaciones por tarjeta ----------------
+// ---------------- Autorizaciones por huella ----------------
 
 export type ProfSlot = { classroomId: string; course: string; career: string };
 const profScheduleCache = new Map<string, Record<string, ProfSlot>>();
@@ -982,7 +995,7 @@ export type CardSlotInfo = {
   source: "horario" | "extra" | "emergencia";
 };
 
-/** Autorización efectiva de una tarjeta en un día/bloque de una semana. */
+/** Autorización efectiva de una huella en un día/bloque de una semana. */
 export function cardSlot(
   s: Pick<State, "cards" | "cardSlots" | "emergencies">,
   cardId: string,
@@ -1011,7 +1024,7 @@ export function cardSlot(
   return null;
 }
 
-/** Regla de acceso: tarjeta deshabilitada → DENEGADO; sin permiso en ese bloque/aula → FUERA DE HORARIO. */
+/** Regla de acceso: huella deshabilitada → DENEGADO; sin permiso en ese bloque/aula → FUERA DE HORARIO. */
 export function evaluateAccess(
   s: Pick<State, "cards" | "cardSlots" | "emergencies">,
   cardId: string,

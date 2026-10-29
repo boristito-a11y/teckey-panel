@@ -44,13 +44,13 @@ export const Route = createFileRoute("/aulas")({
       {
         name: "description",
         content:
-          "Matriz en tiempo real y cronograma semanal de los pabellones F y B con control de apertura RFID.",
+          "Matriz en tiempo real y cronograma semanal de los pabellones F y B con control de apertura por huella digital.",
       },
       { property: "og:title", content: "Aulas y pabellones — TECKEY" },
       {
         property: "og:description",
         content:
-          "Matriz en tiempo real y cronograma semanal de los pabellones F y B con control de apertura RFID.",
+          "Matriz en tiempo real y cronograma semanal de los pabellones F y B con control de apertura por huella digital.",
       },
     ],
   }),
@@ -162,7 +162,7 @@ function MatrizView({ week }: { week: number }) {
   const closeDoor = () => {
     if (!selected) return;
     actions.closeClassroom(selected.id, live?.entry?.professorId);
-    toast.success(`Aula ${selected.id} cerrada con tarjeta del docente.`);
+    toast.success(`Aula ${selected.id} cerrada con la huella del docente.`);
   };
 
   const grantNow = () => {
@@ -267,11 +267,11 @@ function MatrizView({ week }: { week: number }) {
                     ) : lock?.state === "tolerancia" ? (
                       <p className="flex items-center gap-2 font-medium">
                         <TimerReset className="h-4 w-4" /> Clase finalizada: tolerancia de 10 minutos. Si el
-                        docente no cierra con su tarjeta, el sistema ejecuta el Cierre Automático.
+                        docente no cierra con su huella, el sistema ejecuta el Cierre Automático.
                       </p>
                     ) : (
                       <p className="flex items-center gap-2">
-                        <Lock className="h-4 w-4" /> Puerta cerrada. Valide el ingreso con la tarjeta del
+                        <Lock className="h-4 w-4" /> Puerta cerrada. Valide el ingreso con la huella del
                         docente.
                       </p>
                     )}
@@ -283,7 +283,7 @@ function MatrizView({ week }: { week: number }) {
                     </Button>
                   ) : (
                     <Button className="w-full" variant="outline" onClick={closeDoor}>
-                      <Lock className="mr-2 h-4 w-4" /> Cerrar con tarjeta del docente
+                      <Lock className="mr-2 h-4 w-4" /> Cerrar con huella del docente
                     </Button>
                   )}
                 </div>

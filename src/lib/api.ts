@@ -19,7 +19,7 @@ async function get<T>(path: string): Promise<T> {
 // Cada endpoint devuelve los objetos con la misma forma que los tipos del store (ver README).
 export const api = {
   profesores: () => get<Professor[]>("/profesores"),
-  tarjetas: () => get<Card[]>("/tarjetas"),
+  huellas: () => get<Card[]>("/huellas"),
   accesos: () => get<LogItem[]>("/accesos?limite=200"),
   solicitudes: () => get<RequestItem[]>("/solicitudes"),
 };

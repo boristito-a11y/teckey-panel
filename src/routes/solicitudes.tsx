@@ -10,7 +10,7 @@ import { PageHeader, StatusText, Tabs } from "@/components/teckey/Page";
 const KIND = {
   especial: "Acceso especial",
   recuperacion: "Recuperación",
-  contingencia: "Fallo del lector",
+  contingencia: "Fallo de huella",
 } as const;
 
 export const Route = createFileRoute("/solicitudes")({
@@ -40,7 +40,7 @@ function SolicitudesPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader
         title="Solicitudes"
-        description="Pedidos de acceso especial de los docentes: recuperaciones, asesorías y aperturas por fallo del lector."
+        description="Pedidos de acceso especial de los docentes: recuperaciones, asesorías y aperturas cuando el lector no reconoce la huella."
       />
 
       <Tabs

@@ -46,7 +46,7 @@ export function EventFeed({ limit = 7 }: { limit?: number }) {
                 <td className="min-w-0 py-3 pr-3">
                   <p className="font-medium">{l.professorName}</p>
                   <p className="text-xs text-muted-foreground">
-                    Aula {l.classroom}, tarjeta <span className="font-mono">{l.tag}</span>
+                    Aula {l.classroom}, huella <span className="font-mono">{l.tag}</span>
                   </p>
                 </td>
                 <td className="py-3 pr-5 text-right align-top">
